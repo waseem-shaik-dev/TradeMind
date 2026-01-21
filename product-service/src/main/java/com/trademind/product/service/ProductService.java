@@ -1,25 +1,20 @@
 package com.trademind.product.service;
 
-import com.trademind.product.entity.Product;
-import com.trademind.product.entity.ProductPriceHistory;
-
+import com.trademind.product.dto.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface ProductService {
 
-    Product createProduct(Product product);
+    ProductDetailResponse createProduct(ProductCreateRequest request);
 
-    Product getProduct(Long id);
+    ProductDetailResponse updateProduct(Long productId, ProductUpdateRequest request);
 
-    List<Product> getActiveProducts();
+    void deactivateProduct(Long productId);
 
-    ProductPriceHistory setProductPrice(
+    ProductPriceResponse setProductPrice(
             Long productId,
             BigDecimal price,
             LocalDateTime effectiveFrom
     );
-
-    BigDecimal getCurrentPrice(Long productId);
 }

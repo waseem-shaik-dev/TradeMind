@@ -1,22 +1,20 @@
 package com.trademind.product.entity;
 
-import com.trademind.product.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
-
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "brands")
+@Table(name = "product_attributes")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
-public class Brand extends BaseEntity {
+public class ProductAttribute {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String name;
+    private Long productId;
+
+    private String attributeName;   // color, size
+    private String attributeValue;  // red, XL
 }
