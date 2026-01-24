@@ -9,4 +9,5 @@ public interface UnitOfMeasureRepository
         extends JpaRepository<UnitOfMeasure, Long> {
 
     Optional<UnitOfMeasure> findByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCase(String name);
 }

@@ -3,6 +3,7 @@ package com.trademind.product.controller;
 import com.trademind.product.dto.*;
 import com.trademind.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -45,8 +46,10 @@ public class AdminProductController {
     public ProductPriceResponse setPrice(
             @PathVariable Long productId,
             @RequestParam BigDecimal price,
-            @RequestParam LocalDateTime effectiveFrom) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime effectiveFrom) {
 
         return productService.setProductPrice(productId, price, effectiveFrom);
     }
+
+
 }

@@ -20,10 +20,11 @@ public class ProductSpecification {
             List<Predicate> predicates = new ArrayList<>();
 
             if (keyword != null && !keyword.isBlank()) {
+                String like = "%" + keyword.toLowerCase() + "%";
                 predicates.add(
                         cb.or(
-                                cb.like(cb.lower(root.get("name")), "%" + keyword.toLowerCase() + "%"),
-                                cb.like(cb.lower(root.get("sku")), "%" + keyword.toLowerCase() + "%")
+                                cb.like(cb.lower(root.get("name")), like),
+                                cb.like(cb.lower(root.get("sku")), like)
                         )
                 );
             }
@@ -43,4 +44,5 @@ public class ProductSpecification {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
+
 }

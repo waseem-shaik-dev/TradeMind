@@ -3,7 +3,9 @@ package com.trademind.product.serviceImpl;
 import com.trademind.product.dto.*;
 import com.trademind.product.entity.Product;
 import com.trademind.product.entity.ProductAttribute;
+import com.trademind.product.entity.ProductImage;
 import com.trademind.product.entity.ProductPriceHistory;
+import com.trademind.product.enums.OwnerType;
 import com.trademind.product.mapper.ProductAttributeMapper;
 import com.trademind.product.mapper.ProductMapper;
 import com.trademind.product.mapper.ProductPriceMapper;
@@ -63,6 +65,129 @@ public class ProductServiceImpl implements ProductService {
                 currentPrice,
                 savedAttributes
         );
+
+    }
+
+    @Override
+    public List<ProductSummaryResponse> getProductSummariesByOwnerType(
+            OwnerType ownerType) {
+
+        return productRepository.findByOwnerType(ownerType)
+                .stream()
+                .map(product -> {
+
+                    BigDecimal currentPrice =
+                            priceHistoryRepository
+                                    .findCurrentPrice(product.getId())
+                                    .map(ProductPriceHistory::getPrice)
+                                    .orElse(null);
+
+                    String primaryImageUrl =
+                            product.getImages().stream()
+                                    .filter(ProductImage::isPrimaryImage)
+                                    .map(ProductImage::getImageUrl)
+                                    .findFirst()
+                                    .orElse(null);
+
+                    return new ProductSummaryResponse(
+                            product.getId(),
+                            product.getName(),
+                            product.getSku(),
+                            currentPrice,
+                            primaryImageUrl
+                    );
+                })
+                .toList();
+    }
+
+    @Override
+    public ProductDetailResponse getProductDetailById(Long productId) {
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        BigDecimal currentPrice =
+                priceHistoryRepository
+                        .findCurrentPrice(productId)
+                        .map(ProductPriceHistory::getPrice)
+                        .orElse(null);
+
+        List<ProductAttribute> attributes =
+                attributeRepository.findByProductId(productId);
+
+        return productMapper.toDetailResponse(
+                product,
+                currentPrice,
+                attributes
+        );
+    }
+
+
+    @Override
+    public List<ProductSummaryResponse> getProductSummariesByOwner(
+            Long ownerId,
+            OwnerType ownerType) {
+
+        return productRepository
+                .findByOwnerIdAndOwnerType(ownerId, ownerType)
+                .stream()
+                .map(product -> {
+
+                    // 🔹 Current price from price history
+                    BigDecimal currentPrice =
+                            priceHistoryRepository
+                                    .findCurrentPrice(product.getId())
+                                    .map(ProductPriceHistory::getPrice)
+                                    .orElse(null);
+
+                    // 🔹 Primary image from product images
+                    String primaryImageUrl =
+                            product.getImages()
+                                    .stream()
+                                    .filter(ProductImage::isPrimaryImage)
+                                    .map(ProductImage::getImageUrl)
+                                    .findFirst()
+                                    .orElse(null);
+
+                    return new ProductSummaryResponse(
+                            product.getId(),
+                            product.getName(),
+                            product.getSku(),
+                            currentPrice,
+                            primaryImageUrl
+                    );
+                })
+                .toList();
+    }
+
+
+
+    @Override
+    public List<ProductDetailResponse> getProductDetailsByOwner(
+            Long ownerId,
+            OwnerType ownerType) {
+
+        return productRepository
+                .findByOwnerIdAndOwnerType(ownerId, ownerType)
+                .stream()
+                .map(product -> {
+
+                    BigDecimal currentPrice =
+                            priceHistoryRepository
+                                    .findCurrentPrice(product.getId())
+                                    .map(ProductPriceHistory::getPrice)
+                                    .orElse(null);
+
+                    List<ProductAttribute> attributes =
+                            attributeRepository.findByProductId(product.getId());
+
+                    return productMapper.toDetailResponse(
+                            product,
+                            currentPrice,
+                            attributes
+                    );
+                })
+                .toList();
     }
 
 

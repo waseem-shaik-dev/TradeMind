@@ -1,10 +1,14 @@
-package com.trademind.product.controller.publicapi;
+package com.trademind.product.controller;
 
 import com.trademind.product.dto.*;
+import com.trademind.product.enums.OwnerType;
 import com.trademind.product.service.ProductQueryService;
+import com.trademind.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
@@ -12,6 +16,39 @@ import org.springframework.web.bind.annotation.*;
 public class ProductController {
 
     private final ProductQueryService productQueryService;
+    private final ProductService productService;
+
+    // For catalogue summary
+    @GetMapping("/catalogue/summary")
+    public List<ProductSummaryResponse> getCatalogueProductSummaries(
+            @RequestParam OwnerType ownerType) {
+        return productService.getProductSummariesByOwnerType(ownerType);
+    }
+
+    // For catalogue product detail
+    @GetMapping("/catalogue/{productId}")
+    public ProductDetailResponse getCatalogueProductDetail(
+            @PathVariable Long productId) {
+        return productService.getProductDetailById(productId);
+    }
+
+
+    @GetMapping("/owner/{ownerId}/summary")
+    public List<ProductSummaryResponse> getProductSummariesByOwner(
+            @PathVariable Long ownerId,
+            @RequestParam OwnerType ownerType) {
+
+        return productService.getProductSummariesByOwner(ownerId, ownerType);
+    }
+
+    // 🔹 DETAIL VIEW (Management / Admin)
+    @GetMapping("/owner/{ownerId}/details")
+    public List<ProductDetailResponse> getProductDetailsByOwner(
+            @PathVariable Long ownerId,
+            @RequestParam OwnerType ownerType) {
+
+        return productService.getProductDetailsByOwner(ownerId, ownerType);
+    }
 
     /* ---------------- PRODUCT DETAILS ---------------- */
 
