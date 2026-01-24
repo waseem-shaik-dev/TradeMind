@@ -5,8 +5,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "stock_items",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"inventory_id","product_id"}))
+@Table(
+        name = "stock_items",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"inventory_id", "product_id"})
+)
 @Getter
 @Setter
 public class StockItem {
@@ -19,5 +21,12 @@ public class StockItem {
     private Long productId;
 
     private Integer quantityAvailable;
+
+    @Column(nullable = false)
+    private Integer reservedQuantity = 0;
+
     private Integer reorderLevel;
+
+    @Column(nullable = false)
+    private boolean outOfStock;
 }

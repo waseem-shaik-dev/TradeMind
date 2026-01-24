@@ -1,5 +1,6 @@
 package com.trademind.inventory.entity;
 
+import com.trademind.inventory.enums.OwnerType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,7 +19,13 @@ public class Inventory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long ownerId; // retailerId or merchantId
+    private Long ownerId;// retailerId or merchantId
+
+    @Enumerated(EnumType.STRING)
+    private OwnerType ownerType;
+
+    @Column(length = 1024)
+    private String primaryImageUrl;
 
     private String location;
 

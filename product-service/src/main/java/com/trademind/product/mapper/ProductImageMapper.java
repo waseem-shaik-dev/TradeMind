@@ -17,7 +17,7 @@ public class ProductImageMapper {
                 image.getId(),
                 image.getImageUrl(),
                 image.isPrimaryImage(),
-                image.getDisplayOrder()
+                image.getDisplayOrder()==null?0: image.getDisplayOrder()
         );
     }
 

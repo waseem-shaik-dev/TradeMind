@@ -1,9 +1,11 @@
 package com.trademind.product.entity;
 
 import com.trademind.product.entity.BaseEntity;
+import com.trademind.product.enums.OwnerType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -37,6 +39,11 @@ public class Product extends BaseEntity {
     private Long brandId;
     private Long unitOfMeasureId;
 
+    private Long ownerId;
+
+    @Enumerated(EnumType.STRING)
+    private OwnerType ownerType;
+
     /* -------- Business Flags -------- */
 
     private boolean returnable;
@@ -49,5 +56,17 @@ public class Product extends BaseEntity {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ProductImage> images;
+    @Builder.Default
+    private List<ProductImage> images = new ArrayList<>();
+
+    public void addImage(ProductImage image) {
+        images.add(image);
+        image.setProduct(this);
+    }
+
+    public void removeImage(ProductImage image) {
+        images.remove(image);
+        image.setProduct(null);
+    }
+
 }
