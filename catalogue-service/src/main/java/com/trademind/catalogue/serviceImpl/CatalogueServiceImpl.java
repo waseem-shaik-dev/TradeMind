@@ -64,7 +64,9 @@ public class CatalogueServiceImpl implements CatalogueService {
                             p.currentPrice(),
                             p.primaryImageUrl(),
                             stock != null ? stock.quantityAvailable() : 0,
-                            stock != null && stock.outOfStock()
+                            stock != null && stock.outOfStock(),
+                            p.ownerId(),
+                            p.ownerType()
                     );
                 })
                 .toList();
@@ -106,4 +108,47 @@ public class CatalogueServiceImpl implements CatalogueService {
                 stock.outOfStock()
         );
     }
+
+    @Override
+    public CatalogueProductForCartResponse getProductForCart(Long productId) {
+
+        ProductDetailResponse product =
+                restClient.get()
+                        .uri(PRODUCT_URL + "/catalogue/{id}", productId)
+                        .retrieve()
+                        .body(ProductDetailResponse.class);
+
+        return new CatalogueProductForCartResponse(
+                product.id(),
+                product.name(),
+                product.sku(),
+                product.currentPrice(),
+                product.images()
+                        .stream()
+                        .map(ProductImageResponse::imageUrl)
+                        .toList(),
+                product.ownerId(),        // IMPORTANT
+                product.ownerType().name()
+        );
+    }
+
+    @Override
+    public List<CatalogueProductForCartResponse> getProductsForCart(
+            List<Long> productIds) {
+
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        return restClient.post()
+                .uri("http://localhost:8083/internal/products/batch")
+                .body(productIds)
+                .retrieve()
+                .body(new org.springframework.core.ParameterizedTypeReference<
+                        List<CatalogueProductForCartResponse>>() {});
+    }
+
+
+
+
 }

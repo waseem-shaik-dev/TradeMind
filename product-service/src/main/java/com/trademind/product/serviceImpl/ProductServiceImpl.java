@@ -1,6 +1,7 @@
 package com.trademind.product.serviceImpl;
 
 import com.trademind.product.dto.*;
+import com.trademind.product.dto.internal.CatalogueProductForCartResponse;
 import com.trademind.product.entity.Product;
 import com.trademind.product.entity.ProductAttribute;
 import com.trademind.product.entity.ProductImage;
@@ -10,6 +11,7 @@ import com.trademind.product.mapper.ProductAttributeMapper;
 import com.trademind.product.mapper.ProductMapper;
 import com.trademind.product.mapper.ProductPriceMapper;
 import com.trademind.product.repository.ProductAttributeRepository;
+import com.trademind.product.repository.ProductImageRepository;
 import com.trademind.product.repository.ProductPriceHistoryRepository;
 import com.trademind.product.repository.ProductRepository;
 import com.trademind.product.service.ProductService;
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductAttributeRepository attributeRepository;
     private final ProductPriceHistoryRepository priceHistoryRepository;
+    private final ProductImageRepository productImageRepository;
 
     private final ProductMapper productMapper;
     private final ProductAttributeMapper attributeMapper;
@@ -94,7 +99,9 @@ public class ProductServiceImpl implements ProductService {
                             product.getName(),
                             product.getSku(),
                             currentPrice,
-                            primaryImageUrl
+                            primaryImageUrl,
+                            product.getOwnerId(),
+                            product.getOwnerType()
                     );
                 })
                 .toList();
@@ -154,7 +161,9 @@ public class ProductServiceImpl implements ProductService {
                             product.getName(),
                             product.getSku(),
                             currentPrice,
-                            primaryImageUrl
+                            primaryImageUrl,
+                            product.getOwnerId(),
+                            product.getOwnerType()
                     );
                 })
                 .toList();
@@ -260,4 +269,63 @@ public class ProductServiceImpl implements ProductService {
                 priceHistoryRepository.save(history)
         );
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CatalogueProductForCartResponse> getProductsForCart(
+            List<Long> productIds) {
+
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 1️⃣ Fetch products in batch
+        List<Product> products =
+                productRepository.findByIdIn(productIds);
+
+        // 2️⃣ Fetch images in batch (FIXED & SORTED)
+        Map<Long, List<String>> imageMap =
+                productImageRepository.findByProductIdIn(productIds)
+                        .stream()
+                        .sorted(
+                                java.util.Comparator
+                                        .comparing(ProductImage::isPrimaryImage).reversed()
+                                        .thenComparing(
+                                                ProductImage::getDisplayOrder,
+                                                java.util.Comparator.nullsLast(Integer::compareTo)
+                                        )
+                        )
+                        .collect(Collectors.groupingBy(
+                                img -> img.getProduct().getId(),   // ✅ CORRECT
+                                Collectors.mapping(
+                                        ProductImage::getImageUrl,
+                                        Collectors.toList()
+                                )
+                        ));
+
+        // 3️⃣ Fetch current prices in batch (uses YOUR time-aware logic)
+        Map<Long, BigDecimal> priceMap =
+                priceHistoryRepository.findCurrentPrices(productIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                ProductPriceHistory::getProductId,
+                                ProductPriceHistory::getPrice
+                        ));
+
+        // 4️⃣ Map to CatalogueProductForCartResponse
+        return products.stream()
+                .map(product -> new CatalogueProductForCartResponse(
+                        product.getId(),
+                        product.getName(),
+                        product.getSku(),
+                        priceMap.get(product.getId()),
+                        imageMap.getOrDefault(product.getId(), List.of()),
+                        product.getOwnerId(),
+                        product.getOwnerType().name()
+                ))
+                .toList();
+    }
+
+
+
 }

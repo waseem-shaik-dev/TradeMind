@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,20 +24,36 @@ public class AuthServiceImpl implements AuthService {
     private final KafkaProducer producer;
 
     @Override
-    public void register(RegisterRequest req) {
+    public RegisterResponse register(RegisterRequest req, String requesterRole) {
+
+        // 🔐 SECURITY CHECK
+        if (req.role() != Role.CUSTOMER) {
+            if (requesterRole == null || !requesterRole.equals("ADMIN")) {
+                throw new RuntimeException(
+                        "Only ADMIN can create users with role " + req.role()
+                );
+            }
+        }
 
         AuthUser user = AuthUser.builder()
                 .username(req.username())
                 .email(req.email())
                 .passwordHash(encoder.encode(req.password()))
-                .role(Role.USER) // DEFAULT ROLE
+                .role(req.role())
                 .enabled(true)
                 .locked(false)
                 .build();
 
         userRepo.save(user);
+
         producer.publishUserCreated(user);
+
+        return new RegisterResponse(
+                user.getId(),
+                user.getRole().name()
+        );
     }
+
 
     @Override
     public AuthResponse login(LoginRequest req) {
@@ -54,34 +69,53 @@ public class AuthServiceImpl implements AuthService {
         userRepo.save(user);
 
         String jwt = jwtService.generateToken(user);
-        String refresh = UUID.randomUUID().toString();
 
-        refreshRepo.save(
-                new RefreshToken(
-                        null,
-                        refresh,
-                        LocalDateTime.now().plusDays(7),
-                        false,
-                        user
-                )
+        return new AuthResponse(
+                user.getId(),
+                user.getRole().name(),
+                jwt
         );
-
-        return new AuthResponse(jwt, refresh);
     }
 
     @Override
-    public AuthResponse refreshToken(String token) {
+    public void softDeleteUser(Long userId, String requesterRole) {
 
-        RefreshToken rt = refreshRepo.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+        validateAdmin(requesterRole);
 
-        if (rt.isRevoked() || rt.getExpiryDate().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Token expired");
-        }
+        AuthUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return new AuthResponse(
-                jwtService.generateToken(rt.getUser()),
-                token
-        );
+        if (!user.isEnabled() && user.isLocked()) return;
+
+        user.setEnabled(false);
+        user.setLocked(true);
+        userRepo.save(user);
+
+        producer.publishUserSoftDeleted(userId);
     }
+
+    @Override
+    public void restoreUser(Long userId, String requesterRole) {
+
+        validateAdmin(requesterRole);
+
+        AuthUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (user.isEnabled() && !user.isLocked()) return;
+
+        user.setEnabled(true);
+        user.setLocked(false);
+        userRepo.save(user);
+
+        producer.publishUserRestored(userId);
+    }
+
+    private void validateAdmin(String role) {
+        if (!"ADMIN".equals(role)) {
+            throw new RuntimeException("Only ADMIN can perform this operation");
+        }
+    }
+
+
 }

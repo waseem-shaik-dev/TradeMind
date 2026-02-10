@@ -21,4 +21,6 @@ public interface ProductImageRepository
     @Query("update ProductImage i set i.primaryImage = false where i.product.id = :productId")
     void clearPrimaryImages(@Param("productId") Long productId);
 
+    List<ProductImage> findByProductIdIn(List<Long> productIds);
+
 }

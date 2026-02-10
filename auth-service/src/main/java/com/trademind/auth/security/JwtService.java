@@ -15,7 +15,7 @@ public class JwtService {
     private static final String SECRET =
             "THIS_IS_A_VERY_LONG_AND_SECURE_SECRET_KEY_FOR_JWT_SIGNING_256_BITS";
 
-    private static final long JWT_EXPIRY = 15 * 60 * 1000; // 15 min
+    private static final long JWT_EXPIRY = 55 * 60 * 1000; // 15 min
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));

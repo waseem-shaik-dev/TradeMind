@@ -1,5 +1,7 @@
 package com.trademind.product.dto;
 
+import com.trademind.product.enums.OwnerType;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -20,5 +22,7 @@ public record ProductDetailResponse(
         BigDecimal currentPrice,
 
         List<ProductImageResponse> images,
-        List<ProductAttributeResponse> attributes
+        List<ProductAttributeResponse> attributes,
+        Long ownerId,
+        OwnerType ownerType
 ) {}

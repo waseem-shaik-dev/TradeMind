@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/master")
+@RequestMapping("/api/products/admin/master")
 @RequiredArgsConstructor
 public class MasterDataController {
 

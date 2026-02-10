@@ -3,7 +3,9 @@ package com.trademind.product.repository;
 import com.trademind.product.entity.ProductPriceHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductPriceHistoryRepository
@@ -16,4 +18,17 @@ public interface ProductPriceHistoryRepository
           AND (p.effectiveTo IS NULL OR p.effectiveTo >= CURRENT_TIMESTAMP)
     """)
     Optional<ProductPriceHistory> findCurrentPrice(Long productId);
+
+    @Query("""
+    SELECT p FROM ProductPriceHistory p
+    WHERE p.productId IN :productIds
+      AND p.effectiveFrom <= CURRENT_TIMESTAMP
+      AND (p.effectiveTo IS NULL OR p.effectiveTo >= CURRENT_TIMESTAMP)
+""")
+    List<ProductPriceHistory> findCurrentPrices(
+            @Param("productIds") List<Long> productIds
+    );
+
+
+
 }

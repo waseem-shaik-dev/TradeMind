@@ -1,13 +1,11 @@
 package com.trademind.catalogue.controller;
 
 import com.trademind.catalogue.dto.CatalogueProductDetailResponse;
+import com.trademind.catalogue.dto.CatalogueProductForCartResponse;
 import com.trademind.catalogue.dto.CatalogueProductSummaryResponse;
 import com.trademind.catalogue.service.CatalogueService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,4 +34,21 @@ public class CatalogueController {
             @PathVariable Long productId) {
         return catalogueService.getCatalogueProductDetail(productId);
     }
+
+    // INTERNAL – Used by Cart Service
+    @GetMapping("/internal/product/{productId}")
+    public CatalogueProductForCartResponse getProductForCart(
+            @PathVariable Long productId) {
+        return catalogueService.getProductForCart(productId);
+    }
+
+    // INTERNAL – Batch product fetch for cart
+    @PostMapping("/internal/products")
+    public List<CatalogueProductForCartResponse> getProductsForCart(
+            @RequestBody List<Long> productIds) {
+
+        return catalogueService.getProductsForCart(productIds);
+    }
+
+
 }

@@ -2,6 +2,7 @@ package com.trademind.inventory.controller;
 
 import com.trademind.inventory.dto.CatalogueInventoryResponse;
 import com.trademind.inventory.dto.CreateInventoryRequest;
+import com.trademind.inventory.dto.InventoryAvailabilityResponse;
 import com.trademind.inventory.dto.InventoryStockResponse;
 import com.trademind.inventory.entity.Inventory;
 import com.trademind.inventory.entity.StockItem;
@@ -83,6 +84,28 @@ public class InventoryController {
     public CatalogueInventoryResponse getCatalogueInventoryByProduct(
             @PathVariable Long productId) {
         return inventoryService.getInventoryByProductId(productId);
+    }
+
+    // INTERNAL – Cart validation
+    @GetMapping("/internal/{productId}/available")
+    public Integer getAvailableQuantity(
+            @PathVariable Long productId) {
+        return inventoryService.getAvailableQuantity(productId);
+    }
+
+    @GetMapping("/internal/{productId}/validate")
+    public boolean validateStock(
+            @PathVariable Long productId,
+            @RequestParam Integer quantity) {
+        return inventoryService.hasSufficientStock(productId, quantity);
+    }
+
+    // INTERNAL – Batch inventory fetch for cart
+    @PostMapping("/internal/availability")
+    public List<InventoryAvailabilityResponse> getAvailabilityForProducts(
+            @RequestBody List<Long> productIds) {
+
+        return inventoryService.getAvailabilityForProducts(productIds);
     }
 
 
