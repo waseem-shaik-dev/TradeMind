@@ -75,7 +75,9 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                             .findFirst()
                             .map(i -> i.getImageUrl())
                             .orElse(null)
-                            : null
+                            : null,
+                    product.getOwnerId(),
+                    product.getOwnerType()
             );
             return summary;
         });

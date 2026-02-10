@@ -9,7 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/products/{productId}/images")
+@RequestMapping("/api/products/admin/{productId}/images")
 @RequiredArgsConstructor
 public class ProductImageController {
 

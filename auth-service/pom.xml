@@ -101,6 +101,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>com.trademind</groupId>
+			<artifactId>trademind-events</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

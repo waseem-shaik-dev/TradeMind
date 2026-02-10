@@ -1,6 +1,8 @@
 package com.trademind.inventory.serviceImpl;
 
+import com.trademind.events.checkout.common.ItemQuantityDto;
 import com.trademind.inventory.dto.CatalogueInventoryResponse;
+import com.trademind.inventory.dto.InventoryAvailabilityResponse;
 import com.trademind.inventory.dto.InventoryStockResponse;
 import com.trademind.inventory.entity.Inventory;
 import com.trademind.inventory.entity.LowStockAlert;
@@ -221,4 +223,106 @@ public class InventoryServiceImpl implements InventoryService {
             inventoryRepo.deleteById(inventoryId);
         }
     }
+
+    @Override
+    public Integer getAvailableQuantity(Long productId) {
+
+        StockItem stock = stockRepo.findByProductId(productId)
+                .orElseThrow(() -> new RuntimeException("Stock not found"));
+
+        return stock.getQuantityAvailable();
+    }
+
+    @Override
+    public boolean hasSufficientStock(Long productId, Integer requestedQty) {
+
+        StockItem stock = stockRepo.findByProductId(productId)
+                .orElseThrow(() -> new RuntimeException("Stock not found"));
+
+        return stock.getQuantityAvailable() >= requestedQty;
+    }
+
+    @Override
+    public List<InventoryAvailabilityResponse> getAvailabilityForProducts(
+            List<Long> productIds) {
+
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+
+        return stockRepo.findByProductIdIn(productIds)
+                .stream()
+                .map(stock -> new InventoryAvailabilityResponse(
+                        stock.getProductId(),
+                        stock.getQuantityAvailable(),
+                        stock.isOutOfStock()
+                ))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public void reserveStock(
+            Long checkoutId,
+            List<ItemQuantityDto> items
+    ) {
+        for (ItemQuantityDto item : items) {
+
+            StockItem stock = stockRepo
+                    .findByProductIdForUpdate(item.productId())
+                    .orElseThrow(() ->
+                            new IllegalStateException(
+                                    "Stock not found for product " + item.productId()
+                            )
+                    );
+
+            if (stock.getQuantityAvailable() < item.quantity()) {
+                throw new IllegalStateException(
+                        "Insufficient stock for product " + item.productId()
+                );
+            }
+
+            stock.setQuantityAvailable(
+                    stock.getQuantityAvailable() - item.quantity()
+            );
+
+            stock.setReservedQuantity(
+                    stock.getReservedQuantity() + item.quantity()
+            );
+
+            // maintain invariants
+            stock.setOutOfStock(stock.getQuantityAvailable() == 0);
+        }
+    }
+
+    // ---------------------------------------------------------
+
+    @Override
+    @Transactional
+    public void releaseStock(
+            Long checkoutId,
+            List<ItemQuantityDto> items
+    ) {
+        for (ItemQuantityDto item : items) {
+
+            stockRepo
+                    .findByProductIdForUpdate(item.productId())
+                    .ifPresent(stock -> {
+
+                        int releasedQty =
+                                Math.min(item.quantity(), stock.getReservedQuantity());
+
+                        stock.setReservedQuantity(
+                                stock.getReservedQuantity() - releasedQty
+                        );
+
+                        stock.setQuantityAvailable(
+                                stock.getQuantityAvailable() + releasedQty
+                        );
+
+                        stock.setOutOfStock(false);
+                    });
+        }
+    }
+
 }

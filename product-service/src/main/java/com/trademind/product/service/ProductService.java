@@ -1,6 +1,7 @@
 package com.trademind.product.service;
 
 import com.trademind.product.dto.*;
+import com.trademind.product.dto.internal.CatalogueProductForCartResponse;
 import com.trademind.product.enums.OwnerType;
 
 import java.math.BigDecimal;
@@ -33,5 +34,9 @@ public interface ProductService {
     List<ProductSummaryResponse> getProductSummariesByOwnerType(OwnerType ownerType);
 
     ProductDetailResponse getProductDetailById(Long productId);
+
+    List<CatalogueProductForCartResponse> getProductsForCart(
+            List<Long> productIds
+    );
 
 }

@@ -16,4 +16,6 @@ public interface ProductRepository
     List<Product> findByOwnerIdAndOwnerType(Long ownerId, OwnerType ownerType);
     boolean existsBySku(String sku);
     List<Product> findByOwnerType(OwnerType ownerType);
+    List<Product> findByIdIn(List<Long> ids);
+
 }

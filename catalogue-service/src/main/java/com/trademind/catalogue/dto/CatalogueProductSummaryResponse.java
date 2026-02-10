@@ -1,5 +1,7 @@
 package com.trademind.catalogue.dto;
 
+import com.trademind.catalogue.enums.OwnerType;
+
 import java.math.BigDecimal;
 
 public record CatalogueProductSummaryResponse(
@@ -9,6 +11,8 @@ public record CatalogueProductSummaryResponse(
         BigDecimal price,
         String imageUrl,
         Integer quantityAvailable,
-        boolean outOfStock
+        boolean outOfStock,
+        Long ownerId,
+        OwnerType ownerType
 ) {}
 

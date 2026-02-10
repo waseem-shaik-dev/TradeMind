@@ -77,7 +77,9 @@ public class ProductMapper {
                 product.isActive(),
                 currentPrice,
                 imageMapper.toResponses(product.getImages()),
-                attributeMapper.toResponses(attributes)
+                attributeMapper.toResponses(attributes),
+                product.getOwnerId(),
+                product.getOwnerType()
         );
     }
 }

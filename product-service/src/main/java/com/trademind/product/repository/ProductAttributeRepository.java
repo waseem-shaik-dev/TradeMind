@@ -9,4 +9,6 @@ public interface ProductAttributeRepository
         extends JpaRepository<ProductAttribute, Long> {
 
     List<ProductAttribute> findByProductId(Long productId);
+    List<ProductAttribute> findByProductIdIn(List<Long> productIds);
+
 }

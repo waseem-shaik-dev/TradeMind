@@ -8,25 +8,29 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway-service" />
+        <module name="trademind-events" />
       </profile>
-      <profile name="Annotation profile for catalogue-service" enabled="true">
+      <profile name="Annotation profile for inventory-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
         </processorPath>
-        <module name="auth-service" />
-        <module name="merchant-order-service" />
-        <module name="inventory-service" />
-        <module name="catalogue-service" />
+        <module name="cart-service" />
+        <module name="checkout-service" />
         <module name="audit-service" />
-        <module name="analytics-service" />
         <module name="product-service" />
         <module name="user-service" />
-        <module name="order-service" />
         <module name="notification-service" />
         <module name="billing-service" />
+        <module name="auth-service" />
+        <module name="inventory-service" />
+        <module name="payment-service" />
+        <module name="merchant-order-service" />
+        <module name="catalogue-service" />
+        <module name="analytics-service" />
+        <module name="order-service" />
       </profile>
     </annotationProcessing>
   </component>
@@ -37,11 +41,14 @@
       <module name="audit-service" options="-parameters" />
       <module name="auth-service" options="-parameters" />
       <module name="billing-service" options="-parameters" />
+      <module name="cart-service" options="-parameters" />
       <module name="catalogue-service" options="-parameters" />
+      <module name="checkout-service" options="-parameters" />
       <module name="inventory-service" options="-parameters" />
       <module name="merchant-order-service" options="-parameters" />
       <module name="notification-service" options="-parameters" />
       <module name="order-service" options="-parameters" />
+      <module name="payment-service" options="-parameters" />
       <module name="product-service" options="-parameters" />
       <module name="user-service" options="-parameters" />
     </option>

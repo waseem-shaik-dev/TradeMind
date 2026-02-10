@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/api/admin/products")
+@RequestMapping("/api/products/admin")
 @RequiredArgsConstructor
 public class AdminProductController {
 
