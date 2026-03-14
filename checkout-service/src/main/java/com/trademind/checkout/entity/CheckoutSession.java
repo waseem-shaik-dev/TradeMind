@@ -41,6 +41,14 @@ public class CheckoutSession extends BaseEntity {
     @Column(nullable = false)
     private CheckoutStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_type")
+    private DeliveryType deliveryType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "buyer_type", nullable = false)
+    private BuyerType buyerType;
+
     // ---- Price Summary ----
     @Column(nullable = false)
     private BigDecimal subtotalAmount;
@@ -70,6 +78,7 @@ public class CheckoutSession extends BaseEntity {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
+    @Builder.Default
     private List<CheckoutItem> items = new ArrayList<>();
 
     @OneToOne(

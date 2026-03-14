@@ -1,6 +1,10 @@
 package com.trademind.auth.security;
 
 import com.trademind.auth.entity.AuthUser;
+import com.trademind.auth.exception.AccessTokenExpiredException;
+import com.trademind.auth.exception.InvalidJwtSignatureException;
+import com.trademind.auth.exception.JwtValidationException;
+import com.trademind.auth.exception.MalformedJwtExceptionCustom;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
@@ -35,10 +39,27 @@ public class JwtService {
     }
 
     public Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        }catch (ExpiredJwtException e) {
+            throw new AccessTokenExpiredException("Access token expired");
+
+        } catch (UnsupportedJwtException e) {
+            throw new JwtValidationException("Unsupported JWT token");
+
+        } catch (MalformedJwtException e) {
+            throw new MalformedJwtExceptionCustom("Malformed JWT token");
+
+        } catch (SignatureException e) {
+            throw new InvalidJwtSignatureException("Invalid JWT signature");
+
+        } catch (IllegalArgumentException e) {
+            throw new JwtValidationException("JWT token compact of handler are invalid");
+        }
     }
+
 }

@@ -1,5 +1,6 @@
 package com.trademind.checkout.dto.response;
 
+import com.trademind.checkout.enums.BuyerType;
 import com.trademind.checkout.enums.CheckoutStatus;
 
 import java.time.LocalDateTime;

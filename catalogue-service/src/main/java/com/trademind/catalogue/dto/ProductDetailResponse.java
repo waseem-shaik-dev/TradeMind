@@ -22,7 +22,5 @@ public record ProductDetailResponse(
         BigDecimal currentPrice,
 
         List<ProductImageResponse> images,
-        List<ProductAttributeResponse> attributes,
-        Long ownerId,
-        OwnerType ownerType
+        List<ProductAttributeResponse> attributes
 ) {}

@@ -7,10 +7,17 @@ import com.trademind.auth.kafka.KafkaProducer;
 import com.trademind.auth.repository.*;
 import com.trademind.auth.security.JwtService;
 import com.trademind.auth.service.AuthService;
+import com.trademind.auth.service.RefreshTokenService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
@@ -22,6 +29,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder encoder;
     private final JwtService jwtService;
     private final KafkaProducer producer;
+    private final RefreshTokenService refreshService;
+
+    private static final String REFRESH_COOKIE = "trademind_refresh";
 
     @Override
     public RegisterResponse register(RegisterRequest req, String requesterRole) {
@@ -56,7 +66,9 @@ public class AuthServiceImpl implements AuthService {
 
 
     @Override
-    public AuthResponse login(LoginRequest req) {
+    public AuthResponse login(LoginRequest req,
+                              HttpServletRequest httpRequest,
+                              HttpServletResponse response) {
 
         AuthUser user = userRepo.findByUsername(req.username())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -68,12 +80,21 @@ public class AuthServiceImpl implements AuthService {
         user.setLastLoginAt(LocalDateTime.now());
         userRepo.save(user);
 
-        String jwt = jwtService.generateToken(user);
+        String accessToken = jwtService.generateToken(user);
+
+        String refreshToken =
+                refreshService.createRefreshToken(
+                        user,
+                        httpRequest.getHeader("User-Agent"),
+                        httpRequest.getRemoteAddr()
+                );
+
+        addRefreshCookie(response, refreshToken);
 
         return new AuthResponse(
                 user.getId(),
                 user.getRole().name(),
-                jwt
+                accessToken
         );
     }
 
@@ -117,5 +138,107 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+
+
+    @Override
+    public RefreshResponse refresh(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+
+        String rawToken = extractRefreshToken(request);
+
+        RefreshToken oldToken =
+                refreshService.validateToken(rawToken);
+
+        AuthUser user = oldToken.getUser();
+
+        // 🔁 ROTATION
+        oldToken.setRevoked(true);
+        oldToken.setReused(true);
+
+        String newRefresh =
+                refreshService.createRefreshToken(
+                        user,
+                        request.getHeader("User-Agent"),
+                        request.getRemoteAddr()
+                );
+
+        addRefreshCookie(response, newRefresh);
+
+        String newAccessToken =
+                jwtService.generateToken(user);
+
+        return new RefreshResponse( user.getId(),
+                user.getRole().name(),
+                newAccessToken);
+    }
+
+    @Override
+    public void logout(HttpServletRequest request,
+                       HttpServletResponse response) {
+
+        String rawToken = extractRefreshToken(request);
+
+        RefreshToken token =
+                refreshService.validateToken(rawToken);
+
+        refreshService.revokeToken(token);
+
+        clearCookie(response);
+    }
+
+    private void addRefreshCookie(
+            HttpServletResponse response,
+            String token
+    ) {
+
+        ResponseCookie cookie =
+                ResponseCookie.from(REFRESH_COOKIE, token)
+                        .httpOnly(true)
+                        .secure(false) //  HTTP /HTTPS
+                        .path("/")
+                        .maxAge(Duration.ofDays(7))
+                        .sameSite("Strict")
+                        .build();
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                cookie.toString()
+        );
+    }
+
+
+    private String extractRefreshToken(
+            HttpServletRequest request
+    ) {
+
+        if (request.getCookies() == null)
+            throw new RuntimeException("No refresh token");
+
+        for (Cookie cookie : request.getCookies()) {
+            if (REFRESH_COOKIE.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        throw new RuntimeException("Refresh token missing");
+    }
+
+    private void clearCookie(HttpServletResponse response) {
+
+        ResponseCookie cookie =
+                ResponseCookie.from(REFRESH_COOKIE, "")
+                        .httpOnly(true)
+                        .secure(true)
+                        .path("/")
+                        .maxAge(0)
+                        .build();
+
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                cookie.toString()
+        );
+    }
 
 }

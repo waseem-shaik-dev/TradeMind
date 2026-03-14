@@ -7,7 +7,7 @@ public record CheckoutItemResponseDto(
         Long productId,
         String productName,
         String sku,
-
+        String imageUrl,
         BigDecimal unitPrice,
         Integer quantity,
         BigDecimal totalPrice

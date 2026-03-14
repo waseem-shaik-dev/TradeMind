@@ -16,22 +16,23 @@ public interface ProductService {
 
     void deactivateProduct(Long productId);
 
-    List<ProductSummaryResponse> getProductSummariesByOwner(
-            Long ownerId,
-            OwnerType ownerType
-    );
+//    List<ProductSummaryResponse> getProductSummariesByOwner(
+//            Long ownerId,
+//            OwnerType ownerType
+//    );
 
-    List<ProductDetailResponse> getProductDetailsByOwner(
-            Long ownerId,
-            OwnerType ownerType
-    );
+//    List<ProductDetailResponse> getProductDetailsByOwner(
+//            Long ownerId,
+//            OwnerType ownerType
+//    );
 
     ProductPriceResponse setProductPrice(
             Long productId,
             BigDecimal price,
             LocalDateTime effectiveFrom
     );
-    List<ProductSummaryResponse> getProductSummariesByOwnerType(OwnerType ownerType);
+
+   // List<ProductSummaryResponse> getProductSummariesByOwnerType(OwnerType ownerType);
 
     ProductDetailResponse getProductDetailById(Long productId);
 
@@ -39,4 +40,7 @@ public interface ProductService {
             List<Long> productIds
     );
 
+    List<SellerProductViewResponse> getProductsForSeller();
+
+    List<ProductSummaryResponse> getProductSummaries(List<Long> productIds);
 }

@@ -11,13 +11,8 @@ import java.util.List;
 
 @Entity
 @Table(
-        name = "carts",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_user_source_active_cart",
-                        columnNames = {"user_id", "source_id", "source_type", "status"}
-                )
-        }
+        name = "carts"
+
 )
 @Getter
 @Setter

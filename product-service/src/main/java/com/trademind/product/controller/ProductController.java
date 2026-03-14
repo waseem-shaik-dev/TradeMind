@@ -19,11 +19,11 @@ public class ProductController {
     private final ProductService productService;
 
     // For catalogue summary
-    @GetMapping("/catalogue/summary")
-    public List<ProductSummaryResponse> getCatalogueProductSummaries(
-            @RequestParam OwnerType ownerType) {
-        return productService.getProductSummariesByOwnerType(ownerType);
-    }
+//    @GetMapping("/catalogue/summary")
+//    public List<ProductSummaryResponse> getCatalogueProductSummaries(
+//            @RequestParam OwnerType ownerType) {
+//        return productService.getProductSummariesByOwnerType(ownerType);
+//    }
 
     // For catalogue product detail
     @GetMapping("/catalogue/{productId}")
@@ -33,22 +33,22 @@ public class ProductController {
     }
 
 
-    @GetMapping("/owner/{ownerId}/summary")
-    public List<ProductSummaryResponse> getProductSummariesByOwner(
-            @PathVariable Long ownerId,
-            @RequestParam OwnerType ownerType) {
+//    @GetMapping("/owner/{ownerId}/summary")
+//    public List<ProductSummaryResponse> getProductSummariesByOwner(
+//            @PathVariable Long ownerId,
+//            @RequestParam OwnerType ownerType) {
+//
+//        return productService.getProductSummariesByOwner(ownerId, ownerType);
+//    }
 
-        return productService.getProductSummariesByOwner(ownerId, ownerType);
-    }
-
-    // 🔹 DETAIL VIEW (Management / Admin)
-    @GetMapping("/owner/{ownerId}/details")
-    public List<ProductDetailResponse> getProductDetailsByOwner(
-            @PathVariable Long ownerId,
-            @RequestParam OwnerType ownerType) {
-
-        return productService.getProductDetailsByOwner(ownerId, ownerType);
-    }
+//    // 🔹 DETAIL VIEW (Management / Admin)
+//    @GetMapping("/owner/{ownerId}/details")
+//    public List<ProductDetailResponse> getProductDetailsByOwner(
+//            @PathVariable Long ownerId,
+//            @RequestParam OwnerType ownerType) {
+//
+//        return productService.getProductDetailsByOwner(ownerId, ownerType);
+//    }
 
     /* ---------------- PRODUCT DETAILS ---------------- */
 
@@ -90,5 +90,18 @@ public class ProductController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return productQueryService.searchProducts(request, pageable);
+    }
+
+    @GetMapping("/seller/products")
+    public List<SellerProductViewResponse> getProductsForSeller() {
+
+        return productService.getProductsForSeller();
+    }
+
+    @PostMapping("/internal/products/summary")
+    public List<ProductSummaryResponse> getProductsSummary(
+            @RequestBody List<Long> productIds){
+
+        return productService.getProductSummaries(productIds);
     }
 }

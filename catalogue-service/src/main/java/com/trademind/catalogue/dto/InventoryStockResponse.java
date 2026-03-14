@@ -10,7 +10,6 @@ public record InventoryStockResponse(
         Long stockItemId,
         Long productId,
         Integer quantityAvailable,
-        Integer reservedQuantity,
         boolean outOfStock,
         Integer reorderLevel,
 

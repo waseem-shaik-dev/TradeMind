@@ -23,6 +23,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +40,8 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final ProductAttributeMapper attributeMapper;
     private final ProductPriceMapper priceMapper;
+    private final Executor productExecutor;
+
 
     @Override
     public ProductDetailResponse createProduct(ProductCreateRequest request) {
@@ -73,39 +77,39 @@ public class ProductServiceImpl implements ProductService {
 
     }
 
-    @Override
-    public List<ProductSummaryResponse> getProductSummariesByOwnerType(
-            OwnerType ownerType) {
-
-        return productRepository.findByOwnerType(ownerType)
-                .stream()
-                .map(product -> {
-
-                    BigDecimal currentPrice =
-                            priceHistoryRepository
-                                    .findCurrentPrice(product.getId())
-                                    .map(ProductPriceHistory::getPrice)
-                                    .orElse(null);
-
-                    String primaryImageUrl =
-                            product.getImages().stream()
-                                    .filter(ProductImage::isPrimaryImage)
-                                    .map(ProductImage::getImageUrl)
-                                    .findFirst()
-                                    .orElse(null);
-
-                    return new ProductSummaryResponse(
-                            product.getId(),
-                            product.getName(),
-                            product.getSku(),
-                            currentPrice,
-                            primaryImageUrl,
-                            product.getOwnerId(),
-                            product.getOwnerType()
-                    );
-                })
-                .toList();
-    }
+//    @Override
+//    public List<ProductSummaryResponse> getProductSummariesByOwnerType(
+//            OwnerType ownerType) {
+//
+//        return productRepository.findByOwnerType(ownerType)
+//                .stream()
+//                .map(product -> {
+//
+//                    BigDecimal currentPrice =
+//                            priceHistoryRepository
+//                                    .findCurrentPrice(product.getId())
+//                                    .map(ProductPriceHistory::getPrice)
+//                                    .orElse(null);
+//
+//                    String primaryImageUrl =
+//                            product.getImages().stream()
+//                                    .filter(ProductImage::isPrimaryImage)
+//                                    .map(ProductImage::getImageUrl)
+//                                    .findFirst()
+//                                    .orElse(null);
+//
+//                    return new ProductSummaryResponse(
+//                            product.getId(),
+//                            product.getName(),
+//                            product.getSku(),
+//                            currentPrice,
+//                            primaryImageUrl,
+//                            product.getOwnerId(),
+//                            product.getOwnerType()
+//                    );
+//                })
+//                .toList();
+//    }
 
     @Override
     public ProductDetailResponse getProductDetailById(Long productId) {
@@ -130,74 +134,74 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
-    @Override
-    public List<ProductSummaryResponse> getProductSummariesByOwner(
-            Long ownerId,
-            OwnerType ownerType) {
+//    @Override
+//    public List<ProductSummaryResponse> getProductSummariesByOwner(
+//            Long ownerId,
+//            OwnerType ownerType) {
+//
+//        return productRepository
+//                .findByOwnerIdAndOwnerType(ownerId, ownerType)
+//                .stream()
+//                .map(product -> {
+//
+//                    // 🔹 Current price from price history
+//                    BigDecimal currentPrice =
+//                            priceHistoryRepository
+//                                    .findCurrentPrice(product.getId())
+//                                    .map(ProductPriceHistory::getPrice)
+//                                    .orElse(null);
+//
+//                    // 🔹 Primary image from product images
+//                    String primaryImageUrl =
+//                            product.getImages()
+//                                    .stream()
+//                                    .filter(ProductImage::isPrimaryImage)
+//                                    .map(ProductImage::getImageUrl)
+//                                    .findFirst()
+//                                    .orElse(null);
+//
+//                    return new ProductSummaryResponse(
+//                            product.getId(),
+//                            product.getName(),
+//                            product.getSku(),
+//                            currentPrice,
+//                            primaryImageUrl,
+//                            product.getOwnerId(),
+//                            product.getOwnerType()
+//                    );
+//                })
+//                .toList();
+//    }
 
-        return productRepository
-                .findByOwnerIdAndOwnerType(ownerId, ownerType)
-                .stream()
-                .map(product -> {
-
-                    // 🔹 Current price from price history
-                    BigDecimal currentPrice =
-                            priceHistoryRepository
-                                    .findCurrentPrice(product.getId())
-                                    .map(ProductPriceHistory::getPrice)
-                                    .orElse(null);
-
-                    // 🔹 Primary image from product images
-                    String primaryImageUrl =
-                            product.getImages()
-                                    .stream()
-                                    .filter(ProductImage::isPrimaryImage)
-                                    .map(ProductImage::getImageUrl)
-                                    .findFirst()
-                                    .orElse(null);
-
-                    return new ProductSummaryResponse(
-                            product.getId(),
-                            product.getName(),
-                            product.getSku(),
-                            currentPrice,
-                            primaryImageUrl,
-                            product.getOwnerId(),
-                            product.getOwnerType()
-                    );
-                })
-                .toList();
-    }
 
 
-
-    @Override
-    public List<ProductDetailResponse> getProductDetailsByOwner(
-            Long ownerId,
-            OwnerType ownerType) {
-
-        return productRepository
-                .findByOwnerIdAndOwnerType(ownerId, ownerType)
-                .stream()
-                .map(product -> {
-
-                    BigDecimal currentPrice =
-                            priceHistoryRepository
-                                    .findCurrentPrice(product.getId())
-                                    .map(ProductPriceHistory::getPrice)
-                                    .orElse(null);
-
-                    List<ProductAttribute> attributes =
-                            attributeRepository.findByProductId(product.getId());
-
-                    return productMapper.toDetailResponse(
-                            product,
-                            currentPrice,
-                            attributes
-                    );
-                })
-                .toList();
-    }
+//    @Override
+//    public List<ProductDetailResponse> getProductDetailsByOwner(
+//            Long ownerId,
+//            OwnerType ownerType) {
+//
+//        return productRepository
+//                .findByOwnerIdAndOwnerType(ownerId, ownerType)
+//                .stream()
+//                .map(product -> {
+//
+//                    BigDecimal currentPrice =
+//                            priceHistoryRepository
+//                                    .findCurrentPrice(product.getId())
+//                                    .map(ProductPriceHistory::getPrice)
+//                                    .orElse(null);
+//
+//                    List<ProductAttribute> attributes =
+//                            attributeRepository.findByProductId(product.getId());
+//
+//                    return productMapper.toDetailResponse(
+//                            product,
+//                            currentPrice,
+//                            attributes
+//                    );
+//                })
+//                .toList();
+//    }
 
 
     @Override
@@ -319,13 +323,141 @@ public class ProductServiceImpl implements ProductService {
                         product.getName(),
                         product.getSku(),
                         priceMap.get(product.getId()),
-                        imageMap.getOrDefault(product.getId(), List.of()),
-                        product.getOwnerId(),
-                        product.getOwnerType().name()
+                        imageMap.getOrDefault(product.getId(), List.of())
                 ))
                 .toList();
     }
 
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<SellerProductViewResponse> getProductsForSeller() {
 
+        // 1️⃣ Fetch all active products
+        List<SellerProductProjection> products =
+                productRepository.findSellerProductProjection();
+
+        if(products.isEmpty()){
+            return List.of();
+        }
+
+        List<Long> productIds =
+                products.stream()
+                        .map(SellerProductProjection::id)
+                        .toList();
+
+
+
+
+        // 2️⃣ Fetch attributes in batch
+        CompletableFuture<Map<Long, Map<String,String>>> attributeMapFuture =
+               CompletableFuture.supplyAsync(
+                       ()->
+                           attributeRepository.findByProductIdIn(productIds)
+                                   .stream()
+                                   .collect(Collectors.groupingBy(
+                                           ProductAttribute::getProductId,
+                                           Collectors.toMap(
+                                                   ProductAttribute::getAttributeName,
+                                                   ProductAttribute::getAttributeValue
+                                           )
+                                   )),
+                       productExecutor
+               );
+
+
+        // 3️⃣ Fetch images in batch
+        CompletableFuture<Map<Long,String>> imageMapFuture =
+                CompletableFuture.supplyAsync(
+                        ()->
+                                productImageRepository.findByProductIdIn(productIds)
+                                .stream()
+                                .filter(ProductImage::isPrimaryImage)
+                                .collect(Collectors.toMap(
+                                        img -> img.getProduct().getId(),
+                                        ProductImage::getImageUrl,
+                                        (a,b) -> a
+                                )),
+                        productExecutor
+                );
+
+
+        // 4️⃣ Fetch prices in batch
+        CompletableFuture<Map<Long, BigDecimal>> priceMapFuture =
+                CompletableFuture.supplyAsync(
+                        ()->
+                                priceHistoryRepository.findCurrentPrices(productIds)
+                                        .stream()
+                                        .collect(Collectors.toMap(
+                                                ProductPriceHistory::getProductId,
+                                                ProductPriceHistory::getPrice
+                                        )),
+                        productExecutor
+                );
+
+
+        CompletableFuture.allOf(priceMapFuture,imageMapFuture,attributeMapFuture).join();
+
+        Map<Long, Map<String,String>> attributeMap = attributeMapFuture.join();
+        Map<Long,String> imageMap = imageMapFuture.join();
+        Map<Long, BigDecimal> priceMap = priceMapFuture.join();
+
+
+        // 5️⃣ Map to response
+        return products.stream()
+                .map(product -> new SellerProductViewResponse(
+
+                        product.id(),
+                        product.name(),
+                        product.sku(),
+                        product.description(),
+
+                        priceMap.get(product.id()),
+
+                        imageMap.get(product.id()),
+
+                        attributeMap.getOrDefault(
+                                product.id(),
+                                Map.of()
+                        )
+
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductSummaryResponse> getProductSummaries(
+            List<Long> productIds) {
+
+        List<Product> products =
+                productRepository.findByIdIn(productIds);
+
+        Map<Long, BigDecimal> priceMap =
+                priceHistoryRepository.findCurrentPrices(productIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                ProductPriceHistory::getProductId,
+                                ProductPriceHistory::getPrice
+                        ));
+
+        Map<Long, String> imageMap =
+                productImageRepository.findByProductIdIn(productIds)
+                        .stream()
+                        .filter(ProductImage::isPrimaryImage)
+                        .collect(Collectors.toMap(
+                                img -> img.getProduct().getId(),
+                                ProductImage::getImageUrl,
+                                (a,b)->a
+                        ));
+
+        return products.stream()
+                .map(p -> new ProductSummaryResponse(
+                        p.getId(),
+                        p.getName(),
+                        p.getSku(),
+                        priceMap.get(p.getId()),
+                        imageMap.get(p.getId())
+                ))
+                .toList();
+    }
 }

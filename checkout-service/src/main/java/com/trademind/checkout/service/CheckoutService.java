@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface CheckoutService {
 
-    CheckoutSummaryResponseDto createCheckout(CreateCheckoutRequestDto request,Long userId);
+    CheckoutSummaryResponseDto createCheckout(CreateCheckoutRequestDto request,Long userId,String userRole);
 
     CheckoutResponseDto getCheckout(Long checkoutId, Long userId);
 
@@ -30,5 +30,17 @@ public interface CheckoutService {
 
     void expireCheckout(Long checkoutId);
 
+
+    CheckoutPaymentViewDto getCheckoutPaymentView(Long checkoutId);
+
+    DeliveryTypeSelectionResponseDto selectDeliveryType(
+            SelectDeliveryTypeRequestDto requestDto,
+            Long userId
+    );
+
+    void updateCheckoutAfterPayment(
+            Long checkoutId,
+            String newStatus
+    );
 
 }

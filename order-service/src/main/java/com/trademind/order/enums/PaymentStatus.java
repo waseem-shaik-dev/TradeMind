@@ -1,6 +1,13 @@
 package com.trademind.order.enums;
 
 public enum PaymentStatus {
-    PAID, UNPAID, PARTIAL
-}
 
+    INITIATED,
+    PENDING,
+    PAID,
+    FAILED,
+    REFUND_INITIATED,
+    REFUNDED
+
+
+}

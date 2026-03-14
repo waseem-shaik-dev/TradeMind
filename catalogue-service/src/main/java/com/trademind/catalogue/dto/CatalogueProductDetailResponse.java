@@ -17,6 +17,5 @@ public record CatalogueProductDetailResponse(
         List<ProductAttributeResponse> attributes,
 
         Integer quantityAvailable,
-        Integer reservedQuantity,
         boolean outOfStock
 ) {}

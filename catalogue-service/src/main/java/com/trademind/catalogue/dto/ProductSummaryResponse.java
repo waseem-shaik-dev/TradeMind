@@ -10,7 +10,5 @@ public record ProductSummaryResponse(
         String name,
         String sku,
         BigDecimal currentPrice,
-        String primaryImageUrl,
-        Long ownerId,
-        OwnerType ownerType
+        String primaryImageUrl
 ) {}

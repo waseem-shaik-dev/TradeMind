@@ -4,6 +4,7 @@ import com.trademind.cart.service.CartService;
 import com.trademind.events.checkout.CheckoutCancelledEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,10 +21,12 @@ public class CartCheckoutEventConsumer {
             groupId = "cart-service"
     )
     public void handleCheckoutCancelled(
-            CheckoutCancelledEvent event
+            CheckoutCancelledEvent event,
+            Acknowledgment acknowledgment
     ) {
         cartService.unlockCartAfterCheckoutFailure(
                 event.checkoutId()
         );
+        acknowledgment.acknowledge();
     }
 }

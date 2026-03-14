@@ -33,6 +33,10 @@ public class CheckoutItem {
     @Column(nullable = false)
     private String sku;
 
+    @Column(name = "image_url")
+    private String imageUrl;
+
+
     @Column(nullable = false)
     private BigDecimal unitPrice;
 

@@ -4,6 +4,7 @@ import com.trademind.checkout.entity.CheckoutItem;
 import com.trademind.checkout.entity.CheckoutSession;
 import com.trademind.events.checkout.*;
 import com.trademind.events.checkout.common.*;
+import com.trademind.events.order.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,8 @@ public class CheckoutEventProducer {
     private static final String INVENTORY_RELEASE_TOPIC = "inventory.release.requested";
     private static final String CHECKOUT_CONFIRMED_TOPIC = "checkout.confirmed";
     private static final String CHECKOUT_CANCELLED_TOPIC = "checkout.cancelled";
+    private static final String ORDER_CREATE_TOPIC = "order.create.requested";
+
 
     private static final String SOURCE_SERVICE = "checkout-service";
     private static final int EVENT_VERSION = 1;
@@ -101,6 +104,49 @@ public class CheckoutEventProducer {
         );
     }
 
+    public void publishOrderCreationRequestedEvent(
+            CheckoutSession session
+    ) {
+
+        OrderCreationRequestedEvent event =
+                new OrderCreationRequestedEvent(
+                        metadata("ORDER_CREATE_REQUESTED"),
+
+                        session.getId(),
+                        session.getCartId(),
+                        session.getUserId(),
+                        session.getBuyerType().name(),
+
+                        session.getSourceId(),
+                        session.getSourceType().name(),
+
+                        DeliveryType.valueOf(session.getDeliveryType().name()),
+
+                        mapAddress(session),
+
+                        session.getSubtotalAmount(),
+                        session.getTaxAmount(),
+                        session.getDiscountAmount(),
+                        session.getDeliveryFee(),
+                        session.getGrandTotal(),
+                        session.getCurrency(),
+
+                        PaymentMethod.valueOf(session.getPaymentSnapshot().getPaymentMethod().name()),
+                        PaymentStatus.valueOf(session.getPaymentSnapshot().getStatus().name()),
+
+                        mapOrderItems(session),
+
+                        LocalDateTime.now()
+                );
+
+        kafkaTemplate.send(
+                ORDER_CREATE_TOPIC,
+                session.getId().toString(),
+                event
+        );
+    }
+
+
     // ---------- Helpers ----------
 
     private EventMetadata metadata(String eventType) {
@@ -121,4 +167,36 @@ public class CheckoutEventProducer {
                 ))
                 .toList();
     }
+
+    private List<OrderItemDto> mapOrderItems(CheckoutSession session) {
+        return session.getItems().stream()
+                .map(i -> new OrderItemDto(
+                        i.getProductId(),
+                        i.getProductName(),
+                        i.getSku(),
+                        i.getImageUrl(),
+                        i.getUnitPrice(),
+                        i.getQuantity(),
+                        i.getTotalPrice()
+                ))
+                .toList();
+    }
+
+    private OrderAddressDto mapAddress(CheckoutSession session) {
+
+        var a = session.getAddressSnapshot();
+
+        return new OrderAddressDto(
+                a.getFullName(),
+                a.getPhone(),
+                a.getAddressLine1(),
+                a.getAddressLine2(),
+                a.getCity(),
+                a.getState(),
+                a.getPostalCode(),
+                a.getCountry()
+        );
+    }
+
+
 }

@@ -15,6 +15,7 @@ public class CheckoutItemMapper {
                 item.getProductId(),
                 item.getProductName(),
                 item.getSku(),
+                item.getImageUrl(),
                 item.getUnitPrice(),
                 item.getQuantity(),
                 item.getTotalPrice()
