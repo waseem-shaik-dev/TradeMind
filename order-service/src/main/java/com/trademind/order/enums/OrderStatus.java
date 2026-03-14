@@ -1,5 +1,15 @@
 package com.trademind.order.enums;
 
 public enum OrderStatus {
-    CREATED, CONFIRMED, PAID, SHIPPED, DELIVERED, CANCELLED
+
+    CREATED,
+    AWAITING_ACCEPTANCE,
+    ACCEPTED,
+    PROCESSING,
+    PACKED,
+    OUT_FOR_DELIVERY,
+    DELIVERED,
+    REJECTED,
+    CANCELLED,
+    FAILED
 }

@@ -1,5 +1,6 @@
 package com.trademind.auth.security;
 
+import com.trademind.auth.exception.JwtValidationException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import lombok.RequiredArgsConstructor;
@@ -43,10 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
 
         } catch (Exception e) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
+            throw new JwtValidationException("Invalid or expired JWT token", e);
         }
-
         filterChain.doFilter(request, response);
     }
 }

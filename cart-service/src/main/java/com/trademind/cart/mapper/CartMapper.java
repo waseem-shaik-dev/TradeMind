@@ -34,7 +34,8 @@ public class CartMapper {
             Cart cart,
             CartSourceDto source,
             List<CartItemResponseDto> items,
-            CartPriceSummaryDto priceSummary
+            CartPriceSummaryDto priceSummary,
+            CartValidationDto validationDto
     ) {
 
         return new CartResponseDto(
@@ -45,7 +46,7 @@ public class CartMapper {
                 cart.isActive(),
                 items,
                 priceSummary,
-                null,
+                validationDto,
                 cart.getCreatedAt(),
                 cart.getUpdatedAt()
         );

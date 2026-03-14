@@ -11,8 +11,6 @@ public record CatalogueProductSummaryResponse(
         BigDecimal price,
         String imageUrl,
         Integer quantityAvailable,
-        boolean outOfStock,
-        Long ownerId,
-        OwnerType ownerType
+        boolean outOfStock
 ) {}
 

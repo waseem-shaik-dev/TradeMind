@@ -5,5 +5,6 @@ public enum CartStatus {
     CHECKED_OUT,
     EXPIRED,
     ABANDONED,
-    ORDERED
+    ORDERED,
+    LOCKED
 }

@@ -1,10 +1,9 @@
 package com.trademind.auth.controller;
 
-import com.trademind.auth.dto.AuthResponse;
-import com.trademind.auth.dto.LoginRequest;
-import com.trademind.auth.dto.RegisterRequest;
-import com.trademind.auth.dto.RegisterResponse;
+import com.trademind.auth.dto.*;
 import com.trademind.auth.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +24,10 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req) {
-        return ResponseEntity.ok(authService.login(req));
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req,
+                                              HttpServletRequest httpRequest,
+                                              HttpServletResponse response) {
+        return ResponseEntity.ok(authService.login(req,httpRequest,response));
     }
 
     @DeleteMapping("/users/{userId}")
@@ -47,6 +48,24 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshResponse> refresh(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        return ResponseEntity.ok(
+                authService.refresh(request, response)
+        );
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) {
+        authService.logout(request, response);
+        return ResponseEntity.noContent().build();
+    }
 
 
 }

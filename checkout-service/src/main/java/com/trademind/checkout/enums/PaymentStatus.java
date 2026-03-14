@@ -2,6 +2,8 @@ package com.trademind.checkout.enums;
 
 public enum PaymentStatus {
     INITIATED,
-    SUCCESS,
+    PENDING,
+    PAID,
     FAILED
+
 }

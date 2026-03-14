@@ -19,7 +19,7 @@ public interface UserClient {
     /**
      * Fetch single address of logged-in user.
      */
-    @GetMapping("/api/users/me/addresses/{addressId}")
+    @GetMapping("/internal/user/addresses/{addressId}")
     AddressDto getMyAddressById(
             @RequestHeader("X-USER-ID") Long userId,
             @PathVariable("addressId") Long addressId
@@ -28,7 +28,7 @@ public interface UserClient {
     /**
      * Fetch all addresses (for checkout page).
      */
-    @GetMapping("/api/users/me/addresses")
+    @GetMapping("/internal/user/addresses")
     List<AddressDto> getMyAddresses(
             @RequestHeader("X-USER-ID") Long userId
     );

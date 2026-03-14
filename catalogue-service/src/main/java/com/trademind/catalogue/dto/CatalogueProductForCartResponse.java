@@ -8,7 +8,5 @@ public record CatalogueProductForCartResponse(
         String name,
         String sku,
         BigDecimal price,
-        List<String> images,
-        Long sourceId,
-        String sourceType
+        List<String> images
 ) {}

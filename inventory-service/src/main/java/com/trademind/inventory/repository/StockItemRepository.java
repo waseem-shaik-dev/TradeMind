@@ -1,6 +1,7 @@
 package com.trademind.inventory.repository;
 
 import com.trademind.inventory.entity.StockItem;
+import com.trademind.inventory.enums.OwnerType;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -24,4 +25,15 @@ public interface StockItemRepository extends JpaRepository<StockItem, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from StockItem s where s.productId = :productId")
     Optional<StockItem> findByProductIdForUpdate(Long productId);
+
+    List<StockItem> findBySourceId(Long sourceId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<StockItem> findByProductIdAndSourceIdAndSourceRole(
+            Long productId,
+            Long sourceId,
+            OwnerType sourceRole
+    );
+
+
 }

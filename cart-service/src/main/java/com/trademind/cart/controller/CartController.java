@@ -76,12 +76,20 @@ public class CartController {
         return cartService.validateCart(userId, cartId);
     }
 
-    @PutMapping("/{cartId}/checkout-lock")
+    @PutMapping("/{cartId}/lock")
     public void lockCartForCheckout(
             @RequestHeader("X-USER-ID") Long userId,
             @PathVariable Long cartId
     ) {
         cartService.lockCartForCheckout(userId, cartId);
+    }
+
+    @PutMapping("/{cartId}/unlock")
+    public void unlockCartForCheckout(
+            @RequestHeader("X-USER-ID") Long userId,
+            @PathVariable Long cartId
+    ) {
+        cartService.unlockCartAfterCheckoutFailure(cartId);
     }
 
     @PutMapping("/{cartId}/complete")

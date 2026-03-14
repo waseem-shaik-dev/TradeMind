@@ -1,15 +1,13 @@
 package com.trademind.inventory.controller;
 
-import com.trademind.inventory.dto.CatalogueInventoryResponse;
-import com.trademind.inventory.dto.CreateInventoryRequest;
-import com.trademind.inventory.dto.InventoryAvailabilityResponse;
-import com.trademind.inventory.dto.InventoryStockResponse;
+import com.trademind.inventory.dto.*;
 import com.trademind.inventory.entity.Inventory;
 import com.trademind.inventory.entity.StockItem;
 import com.trademind.inventory.enums.MovementType;
 import com.trademind.inventory.enums.OwnerType;
 import com.trademind.inventory.service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -106,6 +104,31 @@ public class InventoryController {
             @RequestBody List<Long> productIds) {
 
         return inventoryService.getAvailabilityForProducts(productIds);
+    }
+
+    @PostMapping("/cancel/{checkoutId}")
+    public ResponseEntity<String> cancelOrderStock(
+            @PathVariable Long checkoutId
+    ) {
+        inventoryService.cancelCommittedStock(checkoutId);
+        return ResponseEntity.ok("Stock restored after order cancellation");
+    }
+
+
+    @PostMapping("/bulk-upload")
+    public void bulkUpload(
+            @RequestHeader("X-USER-id") Long sourceId,
+            @RequestHeader("X-USER-ROLE") String role,
+            @RequestBody List<BulkInventoryRequest> items){
+
+        inventoryService.bulkUpload(sourceId, OwnerType.valueOf(role), items);
+    }
+
+    @GetMapping("/seller/{sourceId}")
+    public List<SellerInventoryViewResponse> getInventoryForSeller(
+            @PathVariable Long sourceId){
+
+        return inventoryService.getInventoryForSeller(sourceId);
     }
 
 

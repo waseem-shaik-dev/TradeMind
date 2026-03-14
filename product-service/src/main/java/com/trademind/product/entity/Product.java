@@ -1,7 +1,5 @@
 package com.trademind.product.entity;
 
-import com.trademind.product.entity.BaseEntity;
-import com.trademind.product.enums.OwnerType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -38,11 +36,6 @@ public class Product extends BaseEntity {
     private Long categoryId;
     private Long brandId;
     private Long unitOfMeasureId;
-
-    private Long ownerId;
-
-    @Enumerated(EnumType.STRING)
-    private OwnerType ownerType;
 
     /* -------- Business Flags -------- */
 

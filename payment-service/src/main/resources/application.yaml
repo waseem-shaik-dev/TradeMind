@@ -1,3 +1,71 @@
+server:
+  port: 8094
+
 spring:
   application:
     name: payment-service
+
+  profiles:
+    active: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/payment_db
+    username: postgres
+    password: 1234
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true
+
+    consumer:
+      group-id: payment-service
+      auto-offset-reset: latest
+      enable-auto-commit: false
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.trusted.packages: "*"
+        spring.json.add.type.headers: true
+
+    listener:
+      ack-mode: manual_immediate
+
+# -------------------------------
+# STRIPE CONFIGURATION
+# -------------------------------
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  publishable-key: ${STRIPE_PUBLISHABLE_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+# -------------------------------
+# PAYMENT SERVICE CONFIG
+# -------------------------------
+payment:
+  currency: INR
+  success-url: http://localhost:3000/payment/success
+  cancel-url: http://localhost:3000/payment/cancel
+
+# -------------------------------
+# LOGGING (very helpful for Stripe)
+# -------------------------------
+logging:
+  level:
+    com.trademind.payment: DEBUG
+    com.stripe: INFO

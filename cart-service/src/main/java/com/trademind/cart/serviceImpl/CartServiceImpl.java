@@ -76,11 +76,14 @@ public class CartServiceImpl implements CartService {
         List<CartItem> cartItems = cart.getItems();
 
         if (cartItems.isEmpty()) {
+            CartValidationDto validation =
+                    validateCart(cart);
             return cartMapper.toCartResponse(
                     cart,
                     cartMapper.mapSource(cart),
                     List.of(),
-                    cartPriceMapper.toPriceSummary(List.of())
+                    cartPriceMapper.toPriceSummary(List.of()),
+                    validation
             );
         }
 
@@ -133,7 +136,17 @@ public class CartServiceImpl implements CartService {
         CartSourceDto source =
                 cartMapper.mapSource(cart);
 
-        return cartMapper.toCartResponse(cart, source, items, price);
+        CartValidationDto validation =
+                validateCart(cart);
+
+        return cartMapper.toCartResponse(
+                cart,
+                source,
+                items,
+                price,
+                validation
+        );
+
     }
 
 
@@ -225,6 +238,7 @@ public class CartServiceImpl implements CartService {
         return new CartItemQuantityResponseDto(
                 cart.getId(),
                 item.getId(),
+                request.productId(),
                 item.getQuantity()
         );
     }
@@ -261,6 +275,7 @@ public class CartServiceImpl implements CartService {
             return new CartItemQuantityResponseDto(
                     cart.getId(),
                     request.cartItemId(),
+                    item.getProductId(),
                     0
             );
         }
@@ -279,6 +294,7 @@ public class CartServiceImpl implements CartService {
         return new CartItemQuantityResponseDto(
                 cart.getId(),
                 item.getId(),
+                item.getProductId(),
                 item.getQuantity()
         );
     }
@@ -449,14 +465,13 @@ public class CartServiceImpl implements CartService {
 
 
     @Override
-    @Transactional
     public void lockCartForCheckout(Long userId, Long cartId) {
 
         Cart cart = cartRepository
                 .findByIdAndUserId(cartId, userId)
                 .orElseThrow(() -> new IllegalStateException("Cart not found"));
 
-        if (cart.getStatus() == CartStatus.CHECKED_OUT ||
+        if (cart.getStatus() == CartStatus.LOCKED ||
                 cart.getStatus() == CartStatus.ORDERED) {
             return; // idempotent
         }
@@ -465,12 +480,11 @@ public class CartServiceImpl implements CartService {
             throw new IllegalStateException("Cart is not active");
         }
 
-        cart.setStatus(CartStatus.CHECKED_OUT);
+        cart.setStatus(CartStatus.LOCKED);
         cart.setActive(false);
     }
 
     @Override
-    @Transactional
     public void markCartCompleted(Long userId, Long cartId) {
 
         Cart cart = cartRepository
@@ -482,12 +496,11 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
     public void unlockCartAfterCheckoutFailure(Long cartId) {
 
         cartRepository.findById(cartId).ifPresent(cart -> {
 
-            if (cart.getStatus() != CartStatus.CHECKED_OUT) {
+            if (cart.getStatus() != CartStatus.LOCKED) {
                 return;
             }
 
@@ -496,6 +509,96 @@ public class CartServiceImpl implements CartService {
         });
     }
 
+
+    // --------------------------------------------------
+// INTERNAL VALIDATION (NO DB RE-FETCH)
+// --------------------------------------------------
+
+    private CartValidationDto validateCart(Cart cart) {
+
+        if (cart.getItems().isEmpty()) {
+            return new CartValidationDto(
+                    false,
+                    false,
+                    false,
+                    false,
+                    "Cart is empty"
+            );
+        }
+
+        // Build productId → quantity map
+        var cartQuantityMap =
+                cart.getItems().stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                CartItem::getProductId,
+                                CartItem::getQuantity
+                        ));
+
+        List<Long> productIds =
+                cartQuantityMap.keySet().stream().toList();
+
+        // Batch inventory fetch
+        var availabilityList =
+                inventoryClient.getAvailabilityForProducts(productIds);
+
+        var availabilityMap =
+                availabilityList.stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                InventoryClient.InventoryAvailabilityDto::productId,
+                                InventoryClient.InventoryAvailabilityDto::quantityAvailable
+                        ));
+
+        boolean hasOutOfStock = false;
+        boolean exceedsQuantityLimit = false;
+        StringBuilder messageBuilder = new StringBuilder();
+
+        for (CartItem item : cart.getItems()) {
+
+            Integer availableQty =
+                    availabilityMap.get(item.getProductId());
+
+            if (availableQty == null) {
+                hasOutOfStock = true;
+                messageBuilder.append("Product ")
+                        .append(item.getProductId())
+                        .append(" unavailable. ");
+                continue;
+            }
+
+            if (availableQty <= 0) {
+                hasOutOfStock = true;
+                messageBuilder.append("Product ")
+                        .append(item.getProductId())
+                        .append(" is out of stock. ");
+                continue;
+            }
+
+            if (availableQty < item.getQuantity()) {
+                exceedsQuantityLimit = true;
+                messageBuilder.append("Only ")
+                        .append(availableQty)
+                        .append(" units available for product ")
+                        .append(item.getProductId())
+                        .append(". ");
+            }
+        }
+
+        boolean valid =
+                !hasOutOfStock && !exceedsQuantityLimit;
+
+        String message =
+                valid
+                        ? "Cart is valid"
+                        : messageBuilder.toString().trim();
+
+        return new CartValidationDto(
+                valid,
+                hasOutOfStock,
+                false,      // price mismatch placeholder
+                exceedsQuantityLimit,
+                message
+        );
+    }
 
 
 

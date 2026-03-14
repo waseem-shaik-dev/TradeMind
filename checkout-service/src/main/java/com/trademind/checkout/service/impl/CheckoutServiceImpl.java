@@ -40,7 +40,7 @@ public class CheckoutServiceImpl implements CheckoutService {
     // --------------------------------------------------------------------
 
     @Override
-    public CheckoutSummaryResponseDto createCheckout(CreateCheckoutRequestDto request, Long userId) {
+    public CheckoutSummaryResponseDto createCheckout(CreateCheckoutRequestDto request, Long userId, String userRole) {
 
         CartResponseDto cart =
                 cartClient.getCart(userId,request.cartId());
@@ -52,9 +52,12 @@ public class CheckoutServiceImpl implements CheckoutService {
         CartSourceDto source = cart.source();
         CartPriceSummaryDto price = cart.priceSummary();
 
+
+
         CheckoutSession session = CheckoutSession.builder()
                 .userId(cart.userId())
                 .cartId(cart.cartId())
+                .buyerType(BuyerType.valueOf(userRole))
                 .sourceId(source.sourceId())
                 .sourceType(SourceType.valueOf(source.sourceType()))
                 .status(CheckoutStatus.CREATED)
@@ -73,12 +76,20 @@ public class CheckoutServiceImpl implements CheckoutService {
                             .productId(ci.productId())
                             .productName(ci.productName())
                             .sku(ci.sku())
+                            .imageUrl(ci.primaryImage())
                             .unitPrice(ci.unitPrice())
                             .quantity(ci.quantity())
                             .totalPrice(ci.totalPrice())
                             .build()
             );
         });
+
+        // 🔒 Lock cart immediately to prevent modifications
+        cartClient.lockCartForCheckout(
+                userId,
+                cart.cartId()
+        );
+
 
         checkoutSessionRepository.save(session);
 
@@ -110,17 +121,21 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         var address = userClient.getMyAddressById(userId, request.addressId());
 
-        CheckoutAddressSnapshot snapshot = CheckoutAddressSnapshot.builder()
-                .fullName(address.fullName())
-                .phone(address.phone())
-                .addressLine1(address.line1())
-                .addressLine2(address.line2())
-                .city(address.city())
-                .state(address.state())
-                .postalCode(address.pincode())
-                .country(address.country())
-                .build();
+        CheckoutAddressSnapshot snapshot = session.getAddressSnapshot();
 
+        if (snapshot == null) {
+            snapshot = new CheckoutAddressSnapshot();
+            snapshot.setCheckoutSession(session); // VERY IMPORTANT
+        }
+
+        snapshot.setFullName(address.fullName());
+        snapshot.setPhone(address.phone());
+        snapshot.setAddressLine1(address.line1());
+        snapshot.setAddressLine2(address.line2());
+        snapshot.setCity(address.city());
+        snapshot.setState(address.state());
+        snapshot.setPostalCode(address.pincode());
+        snapshot.setCountry(address.country());
 
         session.setAddressSnapshot(snapshot);
         session.setStatus(CheckoutStatus.ADDRESS_SELECTED);
@@ -137,23 +152,67 @@ public class CheckoutServiceImpl implements CheckoutService {
     ) {
         CheckoutSession session = getActiveCheckout(request.checkoutId(), userId);
 
-        CheckoutPaymentSnapshot payment = CheckoutPaymentSnapshot.builder()
-                .paymentMethod(request.paymentMethod())
-                .paymentProvider(
-                        request.paymentMethod() == PaymentMethod.COD
-                                ? "NONE"
-                                : "RAZORPAY"
-                )
-                .amount(session.getGrandTotal())
-                .currency(session.getCurrency())
-                .status(PaymentStatus.INITIATED)
-                .build();
+        PaymentMethod paymentMethod= request.paymentMethod();
+
+        boolean isCOD = paymentMethod.equals(PaymentMethod.COD);
+
+        CheckoutPaymentSnapshot payment = session.getPaymentSnapshot();
+
+        if(payment == null){
+            payment = new CheckoutPaymentSnapshot();
+            payment.setCheckoutSession(session);
+        }
+
+        payment.setPaymentMethod(paymentMethod);
+        payment.setPaymentProvider(request.paymentMethod() == PaymentMethod.COD
+                ? "NONE"
+                : "STRIPE");
+        payment.setAmount(session.getGrandTotal());
+        payment.setCurrency(session.getCurrency());
+        payment.setStatus(isCOD?PaymentStatus.PENDING:PaymentStatus.INITIATED);
+
 
         session.setPaymentSnapshot(payment);
         session.setStatus(CheckoutStatus.PAYMENT_SELECTED);
 
         return sessionMapper.toSummaryResponse(session);
     }
+
+    @Override
+    public DeliveryTypeSelectionResponseDto selectDeliveryType(
+            SelectDeliveryTypeRequestDto request,
+            Long userId
+    ) {
+        CheckoutSession session =
+                getActiveCheckout(request.checkoutId(), userId);
+
+        session.setDeliveryType(request.deliveryType());
+
+        // Example logic
+        if (request.deliveryType() == DeliveryType.HOME_DELIVERY) {
+            session.setDeliveryFee(BigDecimal.valueOf(40)); // example
+        } else {
+            session.setDeliveryFee(BigDecimal.ZERO);
+        }
+
+        session.setGrandTotal(
+                session.getSubtotalAmount()
+                        .add(session.getTaxAmount())
+                        .subtract(session.getDiscountAmount())
+                        .add(session.getDeliveryFee())
+        );
+
+        session.setStatus(CheckoutStatus.DELIVERY_SELECTED);
+
+        return new DeliveryTypeSelectionResponseDto(
+                session.getId(),
+                session.getDeliveryType(),
+                session.getDeliveryFee(),
+                session.getGrandTotal(),
+                session.getStatus()
+        );
+    }
+
 
     // --------------------------------------------------------------------
 
@@ -164,13 +223,27 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         validateCheckoutCompleteness(session);
 
+        if (session.getStatus() == CheckoutStatus.RESERVED ||
+                session.getStatus() == CheckoutStatus.CONFIRMED) {
+            return sessionMapper.toSummaryResponse(session);
+        }
+
+        if (session.getStatus() != CheckoutStatus.PAYMENT_SELECTED) {
+            throw new IllegalStateException("Checkout not ready for confirmation");
+        }
+
         session.setStatus(CheckoutStatus.RESERVED);
 
-        // 1️⃣ Reserve inventory
+        // Reserve inventory
         eventProducer.publishInventoryReserveEvent(session);
 
-        // 2️⃣ Notify downstream (payment/order)
-        eventProducer.publishCheckoutConfirmedEvent(session);
+//        // Notify payment / order services
+//        eventProducer.publishCheckoutConfirmedEvent(session);
+//
+
+
+        eventProducer.publishOrderCreationRequestedEvent(session);
+
 
         return sessionMapper.toSummaryResponse(session);
     }
@@ -213,15 +286,18 @@ public class CheckoutServiceImpl implements CheckoutService {
 
             session.setStatus(CheckoutStatus.EXPIRED);
 
-            eventProducer.publishInventoryReleaseEvent(
-                    session,
-                    "CHECKOUT_EXPIRED"
-            );
+//            eventProducer.publishInventoryReleaseEvent(
+//                    session,
+//                    "CHECKOUT_EXPIRED"
+//            );
+//
+//            eventProducer.publishCheckoutCancelledEvent(
+//                    session,
+//                    "CHECKOUT_EXPIRED"
+//            );
 
-            eventProducer.publishCheckoutCancelledEvent(
-                    session,
-                    "CHECKOUT_EXPIRED"
-            );
+            cartClient.unlockCartForCheckout(session.getUserId(), session.getCartId());
+
         });
     }
 
@@ -257,5 +333,77 @@ public class CheckoutServiceImpl implements CheckoutService {
         if (session.getPaymentSnapshot() == null) {
             throw new IllegalStateException("Payment method not selected");
         }
+
+        if(session.getDeliveryType()==null){
+            throw new IllegalStateException("Delivery type is not selected");
+        }
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CheckoutPaymentViewDto getCheckoutPaymentView(Long checkoutId) {
+
+        CheckoutSession session =
+                checkoutSessionRepository.findById(checkoutId)
+                        .orElseThrow(() ->
+                                new IllegalStateException("Checkout not found"));
+
+        if (session.getStatus() == CheckoutStatus.CANCELLED ||
+                session.getStatus() == CheckoutStatus.EXPIRED) {
+            throw new IllegalStateException("Checkout not payable");
+        }
+
+        return new CheckoutPaymentViewDto(
+                session.getId(),
+                session.getUserId(),
+                session.getGrandTotal(),
+                session.getCurrency(),
+                session.getStatus().name()
+        );
+    }
+
+    @Override
+    @Transactional
+    public void updateCheckoutAfterPayment(
+            Long checkoutId,
+            String newStatus
+    ) {
+        CheckoutSession session =
+                checkoutSessionRepository.findById(checkoutId)
+                        .orElseThrow(() ->
+                                new IllegalStateException("Checkout not found"));
+
+        CheckoutStatus status =
+                CheckoutStatus.valueOf(newStatus);
+
+        switch (status) {
+
+            case CONFIRMED -> {
+                if (session.getStatus() != CheckoutStatus.RESERVED) {
+                    throw new IllegalStateException(
+                            "Checkout not ready to be confirmed"
+                    );
+                }
+                session.setStatus(CheckoutStatus.CONFIRMED);
+            }
+
+            case CANCELLED -> {
+                if (session.getStatus() == CheckoutStatus.CONFIRMED) {
+                    throw new IllegalStateException(
+                            "Cannot cancel confirmed checkout"
+                    );
+                }
+                session.setStatus(CheckoutStatus.CANCELLED);
+            }
+
+            default -> throw new IllegalArgumentException(
+                    "Unsupported checkout status update"
+            );
+        }
+    }
+
+
+
+
+
 }

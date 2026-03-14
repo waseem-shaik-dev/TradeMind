@@ -21,10 +21,11 @@ public class CheckoutController {
     @PostMapping
     public ResponseEntity<CheckoutSummaryResponseDto> createCheckout(
             @RequestBody CreateCheckoutRequestDto request,
-            @RequestHeader("X-User-Id") Long userId
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("x-user-role") String userRole
     ) {
         CheckoutSummaryResponseDto response =
-                checkoutService.createCheckout(request,userId);
+                checkoutService.createCheckout(request,userId,userRole);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -119,4 +120,65 @@ public class CheckoutController {
 
         return ResponseEntity.ok(response);
     }
+
+    // 7.Expire checkout
+
+    @PostMapping("/{checkoutId}/expire")
+    public ResponseEntity<?> expireCheckout(
+            @PathVariable Long checkoutId,
+            @RequestBody(required = false) CancelCheckoutRequestDto request,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+
+        checkoutService.expireCheckout(checkoutId);
+
+        return ResponseEntity.ok(HttpStatus.NO_CONTENT);
+    }
+
+    @GetMapping("/{checkoutId}/payment-view")
+    public CheckoutPaymentViewDto getCheckoutForPayment(
+            @PathVariable Long checkoutId
+    ) {
+        return checkoutService.getCheckoutPaymentView(checkoutId);
+    }
+
+    // --------------------------------------------------
+    // 2️⃣ Payment service → update checkout after payment
+    // (OPTIONAL but recommended)
+    // --------------------------------------------------
+
+    @PutMapping("/{checkoutId}/payment-status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateCheckoutAfterPayment(
+            @PathVariable Long checkoutId,
+            @RequestBody CheckoutPaymentUpdateRequestDto request
+    ) {
+        checkoutService.updateCheckoutAfterPayment(
+                checkoutId,
+                request.newStatus()
+        );
+    }
+
+    @PutMapping("/{checkoutId}/delivery-type")
+    public ResponseEntity<DeliveryTypeSelectionResponseDto> selectDeliveryType(
+            @PathVariable Long checkoutId,
+            @RequestBody SelectDeliveryTypeRequestDto request,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+
+        SelectDeliveryTypeRequestDto finalRequest =
+                new SelectDeliveryTypeRequestDto(
+                        checkoutId,
+                        request.deliveryType()
+                );
+
+        return ResponseEntity.ok(
+                checkoutService.selectDeliveryType(
+                        finalRequest,
+                        userId
+                )
+        );
+    }
+
+
 }

@@ -3,6 +3,7 @@ package com.trademind.catalogue.service;
 import com.trademind.catalogue.dto.CatalogueProductDetailResponse;
 import com.trademind.catalogue.dto.CatalogueProductForCartResponse;
 import com.trademind.catalogue.dto.CatalogueProductSummaryResponse;
+import com.trademind.catalogue.dto.SellerCatalogueProductResponse;
 
 import java.util.List;
 
@@ -20,4 +21,5 @@ public interface CatalogueService {
             List<Long> productIds
     );
 
+    List<SellerCatalogueProductResponse> browseProductsForSeller(Long sourceId);
 }

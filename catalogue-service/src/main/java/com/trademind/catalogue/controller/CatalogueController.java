@@ -3,6 +3,7 @@ package com.trademind.catalogue.controller;
 import com.trademind.catalogue.dto.CatalogueProductDetailResponse;
 import com.trademind.catalogue.dto.CatalogueProductForCartResponse;
 import com.trademind.catalogue.dto.CatalogueProductSummaryResponse;
+import com.trademind.catalogue.dto.SellerCatalogueProductResponse;
 import com.trademind.catalogue.service.CatalogueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -50,5 +51,11 @@ public class CatalogueController {
         return catalogueService.getProductsForCart(productIds);
     }
 
+    @GetMapping("/seller/products")
+    public List<SellerCatalogueProductResponse> browseProductsForSeller(
+            @RequestHeader("userId") Long sourceId){
+
+        return catalogueService.browseProductsForSeller(sourceId);
+    }
 
 }

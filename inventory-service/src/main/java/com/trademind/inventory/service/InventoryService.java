@@ -1,9 +1,7 @@
 package com.trademind.inventory.service;
 
 import com.trademind.events.checkout.common.ItemQuantityDto;
-import com.trademind.inventory.dto.CatalogueInventoryResponse;
-import com.trademind.inventory.dto.InventoryAvailabilityResponse;
-import com.trademind.inventory.dto.InventoryStockResponse;
+import com.trademind.inventory.dto.*;
 import com.trademind.inventory.entity.Inventory;
 import com.trademind.inventory.entity.StockItem;
 import com.trademind.inventory.enums.MovementType;
@@ -53,6 +51,19 @@ public interface InventoryService {
 
     void reserveStock(Long checkoutId, List<ItemQuantityDto> items);
 
-    void releaseStock(Long checkoutId, List<ItemQuantityDto> items);
+    // Payment service
+    void finalizeReservedStock(Long checkoutId);
 
+    // Checkout / Payment failure
+    void releaseReservedStock(Long checkoutId);
+
+    void cancelCommittedStock(Long checkoutId);
+
+    void bulkUpload(
+            Long sourceId,
+            OwnerType role,
+            List<BulkInventoryRequest> items
+    );
+
+    List<SellerInventoryViewResponse> getInventoryForSeller(Long sourceId);
 }

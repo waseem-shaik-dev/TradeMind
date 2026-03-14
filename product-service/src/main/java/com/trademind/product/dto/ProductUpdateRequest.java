@@ -1,7 +1,5 @@
 package com.trademind.product.dto;
 
-import com.trademind.product.enums.OwnerType;
-
 import java.util.List;
 
 public record ProductUpdateRequest(
@@ -11,9 +9,6 @@ public record ProductUpdateRequest(
         Long categoryId,
         Long brandId,
         Long unitOfMeasureId,
-
-        Long ownerId,
-        OwnerType ownerType,
 
         boolean returnable,
         boolean taxable,

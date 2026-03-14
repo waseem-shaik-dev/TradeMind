@@ -1,27 +1,22 @@
 package com.trademind.inventory.serviceImpl;
 
 import com.trademind.events.checkout.common.ItemQuantityDto;
-import com.trademind.inventory.dto.CatalogueInventoryResponse;
-import com.trademind.inventory.dto.InventoryAvailabilityResponse;
-import com.trademind.inventory.dto.InventoryStockResponse;
-import com.trademind.inventory.entity.Inventory;
-import com.trademind.inventory.entity.LowStockAlert;
-import com.trademind.inventory.entity.StockItem;
-import com.trademind.inventory.entity.StockMovement;
+import com.trademind.inventory.dto.*;
+import com.trademind.inventory.entity.*;
 import com.trademind.inventory.enums.MovementType;
 import com.trademind.inventory.enums.OwnerType;
+import com.trademind.inventory.enums.ReservationStatus;
 import com.trademind.inventory.kafka.InventoryEventProducer;
-import com.trademind.inventory.repository.InventoryRepository;
-import com.trademind.inventory.repository.LowStockAlertRepository;
-import com.trademind.inventory.repository.StockItemRepository;
-import com.trademind.inventory.repository.StockMovementRepository;
+import com.trademind.inventory.repository.*;
 import com.trademind.inventory.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +28,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final StockMovementRepository movementRepo;
     private final LowStockAlertRepository alertRepo;
     private final InventoryEventProducer producer;
+    private final StockReservationRepository reservationRepo;
 
     @Override
     public Inventory createInventory(
@@ -69,7 +65,6 @@ public class InventoryServiceImpl implements InventoryService {
                                 .map(stock -> new CatalogueInventoryResponse(
                                         stock.getProductId(),
                                         stock.getQuantityAvailable(),
-                                        stock.getReservedQuantity(),
                                         stock.isOutOfStock()
                                 ))
                 )
@@ -85,7 +80,6 @@ public class InventoryServiceImpl implements InventoryService {
         return new CatalogueInventoryResponse(
                 stock.getProductId(),
                 stock.getQuantityAvailable(),
-                stock.getReservedQuantity(),
                 stock.isOutOfStock()
         );
     }
@@ -111,7 +105,6 @@ public class InventoryServiceImpl implements InventoryService {
                                         stock.getId(),
                                         stock.getProductId(),
                                         stock.getQuantityAvailable(),
-                                        stock.getReservedQuantity(),
                                         stock.isOutOfStock(),
                                         stock.getReorderLevel(),
 
@@ -138,7 +131,6 @@ public class InventoryServiceImpl implements InventoryService {
                     s.setInventoryId(inventoryId);
                     s.setProductId(productId);
                     s.setQuantityAvailable(0);
-                    s.setReservedQuantity(0);
                     return s;
                 });
 
@@ -201,7 +193,6 @@ public class InventoryServiceImpl implements InventoryService {
                         stock.getId(),
                         stock.getProductId(),
                         stock.getQuantityAvailable(),
-                        stock.getReservedQuantity(),
                         stock.isOutOfStock(),
                         stock.getReorderLevel(),
                         inventory.getCreatedAt()
@@ -260,69 +251,253 @@ public class InventoryServiceImpl implements InventoryService {
                 .toList();
     }
 
+    // --------------------------------------------------
+    // 1️⃣ RESERVE (Checkout.confirm)
+    // --------------------------------------------------
     @Override
-    @Transactional
     public void reserveStock(
             Long checkoutId,
             List<ItemQuantityDto> items
     ) {
-        for (ItemQuantityDto item : items) {
+        try {
 
-            StockItem stock = stockRepo
-                    .findByProductIdForUpdate(item.productId())
-                    .orElseThrow(() ->
-                            new IllegalStateException(
-                                    "Stock not found for product " + item.productId()
-                            )
+
+            for (ItemQuantityDto item : items) {
+
+                if (reservationRepo.existsByCheckoutIdAndProductId(
+                        checkoutId, item.productId()
+                )) {
+                    continue; // idempotent
+                }
+
+                StockItem stock = stockRepo
+                        .findByProductIdForUpdate(item.productId())
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Stock not found for product "
+                                                + item.productId()
+                                )
+                        );
+
+                if (stock.getQuantityAvailable() < item.quantity()) {
+                    throw new IllegalStateException(
+                            "Insufficient stock for product "
+                                    + item.productId()
                     );
+                }
 
-            if (stock.getQuantityAvailable() < item.quantity()) {
-                throw new IllegalStateException(
-                        "Insufficient stock for product " + item.productId()
+                stock.setQuantityAvailable(
+                        stock.getQuantityAvailable() - item.quantity()
                 );
+                stock.setOutOfStock(
+                        stock.getQuantityAvailable() <= 0
+                );
+
+                StockReservation r = new StockReservation();
+                r.setCheckoutId(checkoutId);
+                r.setProductId(item.productId());
+                r.setQuantity(item.quantity());
+                r.setStatus(ReservationStatus.RESERVED);
+
+                reservationRepo.save(r);
             }
 
-            stock.setQuantityAvailable(
-                    stock.getQuantityAvailable() - item.quantity()
-            );
-
-            stock.setReservedQuantity(
-                    stock.getReservedQuantity() + item.quantity()
-            );
-
-            // maintain invariants
-            stock.setOutOfStock(stock.getQuantityAvailable() == 0);
         }
+
+        catch (IllegalStateException ex) {
+
+            // 🔥 Fire failure event BEFORE rollback completes
+            producer.publishInventoryReserveFailed(
+                    checkoutId,
+                    ex.getMessage()
+            );
+
+            // 🔁 rollback DB transaction
+            throw ex;
+        }
+
     }
+
+    // --------------------------------------------------
+    // 2️⃣ FINALIZE (Payment.success)
+    // --------------------------------------------------
+    @Override
+    public void finalizeReservedStock(Long checkoutId) {
+
+        List<StockReservation> reservations =
+                reservationRepo.findAllByCheckoutId(checkoutId);
+
+        if (reservations.isEmpty()) {
+            return; // idempotent
+        }
+
+        for (StockReservation r : reservations) {
+            r.setStatus(ReservationStatus.COMMITTED);
+        }
+
+        reservationRepo.saveAll(reservations);
+    }
+
 
     // ---------------------------------------------------------
 
+    // --------------------------------------------------
+    // 3️⃣ RELEASE (Payment.failed / Checkout.expired)
+    // --------------------------------------------------
+    @Override
+    public void releaseReservedStock(Long checkoutId) {
+
+        List<StockReservation> reservations =
+                reservationRepo.findAllByCheckoutId(checkoutId);
+
+        for (StockReservation r : reservations) {
+
+            if (r.getStatus() != ReservationStatus.RESERVED) {
+                continue; // do not release committed
+            }
+
+
+            StockItem stock = stockRepo
+                    .findByProductIdForUpdate(r.getProductId())
+                    .orElseThrow();
+
+            stock.setQuantityAvailable(
+                    stock.getQuantityAvailable() + r.getQuantity()
+            );
+            stock.setOutOfStock(false);
+            r.setStatus(ReservationStatus.RELEASED);
+        }
+
+        // 🔥 cleanup
+        reservationRepo.deleteAllByCheckoutId(checkoutId);
+
+
+    }
+
+    @Override
+    public void cancelCommittedStock(Long checkoutId) {
+
+        List<StockReservation> reservations =
+                reservationRepo.findAllByCheckoutId(checkoutId);
+
+        for (StockReservation r : reservations) {
+
+            if (r.getStatus() != ReservationStatus.COMMITTED) {
+                continue; // only restore committed
+            }
+
+            StockItem stock = stockRepo
+                    .findByProductIdForUpdate(r.getProductId())
+                    .orElseThrow();
+
+            stock.setQuantityAvailable(
+                    stock.getQuantityAvailable() + r.getQuantity()
+            );
+
+            stock.setOutOfStock(
+                    stock.getQuantityAvailable() <= 0
+            );
+
+            r.setStatus(ReservationStatus.CANCELLED);
+
+            movementRepo.save(
+                    new StockMovement(
+                            null,
+                            stock.getId(),
+                            MovementType.IN,
+                            r.getQuantity(),
+                            "ORDER_CANCEL_" + checkoutId,
+                            LocalDateTime.now()
+                    )
+            );
+        }
+
+        reservationRepo.deleteAllByCheckoutId(checkoutId);
+    }
+
     @Override
     @Transactional
-    public void releaseStock(
-            Long checkoutId,
-            List<ItemQuantityDto> items
-    ) {
-        for (ItemQuantityDto item : items) {
+    public void bulkUpload(
+            Long sourceId,
+            OwnerType role,
+            List<BulkInventoryRequest> items) {
 
-            stockRepo
-                    .findByProductIdForUpdate(item.productId())
-                    .ifPresent(stock -> {
+        if(items == null || items.isEmpty()){
+            return;
+        }
 
-                        int releasedQty =
-                                Math.min(item.quantity(), stock.getReservedQuantity());
-
-                        stock.setReservedQuantity(
-                                stock.getReservedQuantity() - releasedQty
+        // 1️⃣ Find or create seller inventory
+        Inventory inventory =
+                inventoryRepo
+                        .findByOwnerIdAndOwnerType(sourceId, role)
+                        .orElseGet(() ->
+                                inventoryRepo.save(
+                                        Inventory.builder()
+                                                .ownerId(sourceId)
+                                                .ownerType(role)
+                                                .createdAt(LocalDateTime.now())
+                                                .build()
+                                )
                         );
 
-                        stock.setQuantityAvailable(
-                                stock.getQuantityAvailable() + releasedQty
-                        );
+        Long inventoryId = inventory.getId();
 
-                        stock.setOutOfStock(false);
-                    });
+
+        // 2️⃣ Process each product
+        for(BulkInventoryRequest item : items){
+
+            Optional<StockItem> existing =
+                    stockRepo.findByInventoryIdAndProductId(
+                            inventoryId,
+                            item.productid()
+                    );
+
+            if(existing.isPresent()){
+
+                StockItem stock = existing.get();
+
+                stock.setQuantityAvailable(
+                        stock.getQuantityAvailable() + item.quantity()
+                );
+
+                stock.setPrice(item.price());
+
+                stockRepo.save(stock);
+
+            }
+            else{
+
+                StockItem stock =
+                        StockItem.builder()
+                                .inventoryId(inventoryId)
+                                .productId(item.productid())
+                                .quantityAvailable(item.quantity())
+                                .price(item.price())
+                                .outOfStock(item.quantity() <= 0)
+                                .sourceId(sourceId)
+                                .sourceRole(role)
+                                .build();
+
+                stockRepo.save(stock);
+            }
         }
     }
+
+    public List<SellerInventoryViewResponse> getInventoryForSeller(Long sourceId){
+
+        return stockRepo
+                .findBySourceId(sourceId)
+                .stream()
+                .map(inv -> new SellerInventoryViewResponse(
+                        inv.getId(),
+                        inv.getProductId(),
+                        inv.getSourceId(),
+                        inv.getSourceRole().name(),
+                        inv.getQuantityAvailable(),
+                        inv.getPrice()
+                ))
+                .toList();
+    }
+
 
 }

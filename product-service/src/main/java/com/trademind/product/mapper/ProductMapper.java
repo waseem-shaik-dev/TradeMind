@@ -30,8 +30,6 @@ public class ProductMapper {
                 .categoryId(request.categoryId())
                 .brandId(request.brandId())
                 .unitOfMeasureId(request.unitOfMeasureId())
-                .ownerId(request.ownerId())
-                .ownerType(request.ownerType())
                 .returnable(request.returnable())
                 .taxable(request.taxable())
                 .build();
@@ -49,9 +47,6 @@ public class ProductMapper {
         if (request.categoryId() != null) product.setCategoryId(request.categoryId());
         if (request.brandId() != null) product.setBrandId(request.brandId());
         if (request.unitOfMeasureId() != null) product.setUnitOfMeasureId(request.unitOfMeasureId());
-        if(request.ownerId()!=null)product.setOwnerId(request.ownerId());
-        if(request.ownerType()!=null)product.setOwnerType(request.ownerType());
-
         product.setReturnable(request.returnable());
         product.setTaxable(request.taxable());
         product.setActive(request.active());
@@ -77,9 +72,7 @@ public class ProductMapper {
                 product.isActive(),
                 currentPrice,
                 imageMapper.toResponses(product.getImages()),
-                attributeMapper.toResponses(attributes),
-                product.getOwnerId(),
-                product.getOwnerType()
+                attributeMapper.toResponses(attributes)
         );
     }
 }

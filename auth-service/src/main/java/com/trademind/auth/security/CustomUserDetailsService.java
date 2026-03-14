@@ -1,5 +1,6 @@
 package com.trademind.auth.security;
 
+import com.trademind.auth.exception.UserNotFoundException;
 import com.trademind.auth.repository.AuthUserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.*;
@@ -17,7 +18,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         var user = repository.findByUsername(username)
                 .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found"));
+                        new UserNotFoundException("User not found with username: " + username));
 
         return User.builder()
                 .username(user.getUsername())
