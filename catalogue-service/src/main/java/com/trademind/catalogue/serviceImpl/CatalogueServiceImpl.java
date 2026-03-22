@@ -81,7 +81,9 @@ public class CatalogueServiceImpl implements CatalogueService {
                             p.currentPrice(),
                             p.primaryImageUrl(),
                             stock.quantityAvailable(),
-                            stock.outOfStock()
+                            stock.outOfStock(),
+                            stock.sourceId(),
+                            stock.sourceRole()
                     );
 
                 })
@@ -119,8 +121,11 @@ public class CatalogueServiceImpl implements CatalogueService {
                         .toList(),
                 product.attributes(),
                 stock.quantityAvailable(),
-                stock.outOfStock()
+                stock.outOfStock(),
+                stock.sourceId(),
+                stock.sourceRole()
         );
+
     }
 
     @Override
@@ -212,11 +217,127 @@ public class CatalogueServiceImpl implements CatalogueService {
                             .attributes(product.attributes())
                             .sellerHasInventory(inv != null)
                             .inventoryId(inv != null ? inv.inventoryId() : null)
-                            .availableQuantity(inv != null ? inv.availableQuantity() : 0)
+                            .availableQuantity(inv != null ? inv.quantityAvailable() : 0)
                             .sellerPrice(inv != null ? inv.price() : null)
                             .build();
                 })
                 .toList();
+    }
+
+    @Override
+    public List<CatalogueProductSummaryResponse> browseProductsForSellerCatalogue(
+            Long sellerId) {
+
+        // 1️⃣ Fetch seller inventory
+        List<SellerInventoryViewResponse> inventory =
+                restClient.get()
+                        .uri(INVENTORY_URL + "/seller/{id}", sellerId)
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<
+                                List<SellerInventoryViewResponse>>() {});
+
+        System.out.println("seller inventory response:   \n\n\n\n\n\n" +inventory);
+
+        if (inventory == null || inventory.isEmpty()) {
+            return List.of();
+        }
+
+        // 2️⃣ Extract productIds
+        List<Long> productIds =
+                inventory.stream()
+                        .map(SellerInventoryViewResponse::productId)
+                        .toList();
+
+        // 3️⃣ Fetch product summaries in batch
+        List<ProductSummaryResponse> products =
+                restClient.post()
+                        .uri(PRODUCT_URL + "/internal/products/summary")
+                        .body(productIds)
+                        .retrieve()
+                        .body(new ParameterizedTypeReference<
+                                List<ProductSummaryResponse>>() {});
+
+        // 4️⃣ Map inventory by productId
+        Map<Long, SellerInventoryViewResponse> inventoryMap =
+                inventory.stream()
+                        .collect(Collectors.toMap(
+                                SellerInventoryViewResponse::productId,
+                                inv -> inv
+                        ));
+
+        // 5️⃣ Merge
+        return products.stream()
+                .map(product -> {
+
+                    SellerInventoryViewResponse stock =
+                            inventoryMap.get(product.id());
+
+                    return new CatalogueProductSummaryResponse(
+                            product.id(),
+                            product.name(),
+                            product.sku(),
+                            product.currentPrice(),
+                            product.primaryImageUrl(),
+                            stock.quantityAvailable(),
+                            stock.quantityAvailable() <= 0,
+                            stock.sourceId(),
+                            stock.sourceRole()
+                    );
+
+                })
+                .toList();
+    }
+
+    @Override
+    public CatalogueProductDetailResponse getSellerProductDetail(
+            Long sellerId,
+            Long productId) {
+
+        CompletableFuture<ProductDetailResponse> productFuture =
+                CompletableFuture.supplyAsync(() ->
+                        restClient.get()
+                                .uri(PRODUCT_URL + "/catalogue/{id}", productId)
+                                .retrieve()
+                                .body(ProductDetailResponse.class)
+                );
+
+        CompletableFuture<SellerInventoryViewResponse> inventoryFuture =
+                CompletableFuture.supplyAsync(() ->
+                        restClient.get()
+                                .uri(INVENTORY_URL + "/seller/{sellerId}", sellerId)
+                                .retrieve()
+                                .body(new ParameterizedTypeReference<
+                                        List<SellerInventoryViewResponse>>() {})
+                                .stream()
+                                .filter(i -> i.productId().equals(productId))
+                                .findFirst()
+                                .orElse(null)
+                );
+
+        CompletableFuture.allOf(productFuture, inventoryFuture).join();
+
+        ProductDetailResponse product = productFuture.join();
+        SellerInventoryViewResponse stock = inventoryFuture.join();
+
+        return new CatalogueProductDetailResponse(
+                product.id(),
+                product.name(),
+                product.sku(),
+                product.description(),
+                product.currentPrice(),
+                product.returnable(),
+                product.taxable(),
+                product.images()
+                        .stream()
+                        .map(ProductImageResponse::imageUrl)
+                        .toList(),
+                product.attributes(),
+                stock != null ? stock.quantityAvailable() : 0,
+                stock != null && stock.quantityAvailable() <= 0,
+                stock.sourceId(),
+                stock.sourceRole()
+        );
+
     }
 
 

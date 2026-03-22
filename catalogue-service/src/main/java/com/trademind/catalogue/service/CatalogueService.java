@@ -22,4 +22,13 @@ public interface CatalogueService {
     );
 
     List<SellerCatalogueProductResponse> browseProductsForSeller(Long sourceId);
+
+    List<CatalogueProductSummaryResponse> browseProductsForSellerCatalogue(
+            Long sellerId
+    );
+
+    CatalogueProductDetailResponse getSellerProductDetail(
+            Long sellerId,
+            Long productId
+    );
 }

@@ -3,7 +3,11 @@ package com.trademind.inventory.dto;
 import java.math.BigDecimal;
 
 public record BulkInventoryRequest(
-        Long productid,
+
+        Long productId,
         Integer quantity,
-        BigDecimal price
+        String productName,
+        BigDecimal price,
+        String primaryImageUrl
+
 ) {}

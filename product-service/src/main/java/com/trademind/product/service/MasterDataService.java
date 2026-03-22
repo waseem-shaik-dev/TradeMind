@@ -17,4 +17,17 @@ public interface MasterDataService {
     List<IdNameResponse> getAllCategories();
 
     List<IdNameResponse> getAllUnits();
+
+    List<IdNameResponse> getRootCategories();
+
+    List<IdNameResponse> getChildCategories(Long parentId);
+
+    List<IdNameResponse> createBrandsBulk(
+            List<CreateBrandRequest> requests);
+
+    List<IdNameResponse> createUnitsBulk(
+            List<CreateUnitRequest> requests);
+
+    List<IdNameResponse> createCategoriesBulk(
+            List<CreateCategoryRequest> requests);
 }

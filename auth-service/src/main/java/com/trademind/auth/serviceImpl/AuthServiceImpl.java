@@ -1,5 +1,6 @@
 package com.trademind.auth.serviceImpl;
 
+import com.trademind.audit.sdk.annotation.AuditLoggable;
 import com.trademind.auth.dto.*;
 import com.trademind.auth.entity.*;
 import com.trademind.auth.enums.Role;
@@ -8,6 +9,7 @@ import com.trademind.auth.repository.*;
 import com.trademind.auth.security.JwtService;
 import com.trademind.auth.service.AuthService;
 import com.trademind.auth.service.RefreshTokenService;
+import com.trademind.events.audit.enums.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,6 +35,12 @@ public class AuthServiceImpl implements AuthService {
 
     private static final String REFRESH_COOKIE = "trademind_refresh";
 
+    @AuditLoggable(
+            action = AuditAction.USER_REGISTERED,
+            entityType = EntityType.USER,
+            entityIdExpression = "#result.userId",
+            captureAfter = true
+    )
     @Override
     public RegisterResponse register(RegisterRequest req, String requesterRole) {
 
@@ -65,6 +73,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
 
+    @AuditLoggable(
+            action = AuditAction.USER_LOGIN,
+            entityType = EntityType.USER,
+            entityIdExpression = "#result.userId"
+    )
     @Override
     public AuthResponse login(LoginRequest req,
                               HttpServletRequest httpRequest,
@@ -98,6 +111,13 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    @AuditLoggable(
+            action = AuditAction.USER_DELETED,
+            entityType = EntityType.USER,
+            entityIdExpression = "#userId",
+            captureBefore = true,
+            captureAfter = true
+    )
     @Override
     public void softDeleteUser(Long userId, String requesterRole) {
 
@@ -115,6 +135,14 @@ public class AuthServiceImpl implements AuthService {
         producer.publishUserSoftDeleted(userId);
     }
 
+
+    @AuditLoggable(
+            action = AuditAction.USER_UPDATED,
+            entityType = EntityType.USER,
+            entityIdExpression = "#userId",
+            captureBefore = true,
+            captureAfter = true
+    )
     @Override
     public void restoreUser(Long userId, String requesterRole) {
 
@@ -174,6 +202,11 @@ public class AuthServiceImpl implements AuthService {
                 newAccessToken);
     }
 
+
+    @AuditLoggable(
+            action = AuditAction.USER_LOGOUT,
+            entityType = EntityType.USER
+    )
     @Override
     public void logout(HttpServletRequest request,
                        HttpServletResponse response) {

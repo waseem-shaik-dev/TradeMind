@@ -17,5 +17,7 @@ public record CatalogueProductDetailResponse(
         List<ProductAttributeResponse> attributes,
 
         Integer quantityAvailable,
-        boolean outOfStock
+        boolean outOfStock,
+        Long sourceId,
+        String SourceRole
 ) {}

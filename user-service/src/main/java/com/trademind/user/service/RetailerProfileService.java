@@ -8,5 +8,5 @@ public interface RetailerProfileService {
 
     RetailerProfileDto updateMyProfile(Long userId, RetailerProfileDto dto);
 
-    RetailerProfileDto verifyRetailer(Long userId, boolean verified);
+   // RetailerProfileDto verifyRetailer(Long userId, boolean verified);
 }

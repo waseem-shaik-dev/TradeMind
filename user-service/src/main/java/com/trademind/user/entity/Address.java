@@ -25,6 +25,7 @@ public class Address {
     private String state;
     private String pincode;
     private String country;
+    private Boolean isPrimary;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

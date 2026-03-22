@@ -6,6 +6,7 @@ import com.trademind.order.dto.view.*;
 import com.trademind.order.entity.Order;
 import com.trademind.order.enums.*;
 import com.trademind.order.feign.InventoryClient;
+import com.trademind.order.kafka.producer.BillingEventProducer;
 import com.trademind.order.kafka.producer.InventoryEventProducer;
 import com.trademind.order.kafka.producer.OrderEventProducer;
 import com.trademind.order.mapper.OrderMapper;
@@ -29,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderStateMachineValidator validator;
     private final InventoryClient inventoryClient;
     private final InventoryEventProducer inventoryEventProducer;
+    private final BillingEventProducer billingEventProducer;
 
 
     // ============================================================
@@ -348,6 +350,9 @@ public class OrderServiceImpl implements OrderService {
         );
 
         order.setPaymentStatus(PaymentStatus.PAID);
+
+        // 🔥 TRIGGER BILLING
+        billingEventProducer.publishBillingEvent(order);
 
 
         return orderMapper.toStatusUpdateResponse(

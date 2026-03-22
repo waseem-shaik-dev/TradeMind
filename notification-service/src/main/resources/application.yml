@@ -16,6 +16,8 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service
 
   mail:
     host: smtp.gmail.com
@@ -28,3 +30,8 @@ spring:
           auth: true
           starttls:
             enable: true
+
+kafka:
+  topics:
+    notification: notification-topic
+

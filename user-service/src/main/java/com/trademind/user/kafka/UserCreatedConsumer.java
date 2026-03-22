@@ -104,7 +104,6 @@ public class UserCreatedConsumer {
     private void createMerchantProfile(User user) {
         MerchantProfile merchantProfile = MerchantProfile.builder()
                 .user(user)
-                .verified(false)
                 .build();
 
         user.setMerchantProfile(merchantProfile);
@@ -113,7 +112,6 @@ public class UserCreatedConsumer {
     private void createRetailerProfile(User user) {
         RetailerProfile retailerProfile = RetailerProfile.builder()
                 .user(user)
-                .verified(false)
                 .build();
 
         user.setRetailerProfile(retailerProfile);

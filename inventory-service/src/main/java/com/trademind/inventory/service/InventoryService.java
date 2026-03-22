@@ -3,7 +3,6 @@ package com.trademind.inventory.service;
 import com.trademind.events.checkout.common.ItemQuantityDto;
 import com.trademind.inventory.dto.*;
 import com.trademind.inventory.entity.Inventory;
-import com.trademind.inventory.entity.StockItem;
 import com.trademind.inventory.enums.MovementType;
 import com.trademind.inventory.enums.OwnerType;
 
@@ -11,15 +10,10 @@ import java.util.List;
 
 public interface InventoryService {
 
-    Inventory createInventory(
-            Long ownerId,
-            OwnerType ownerType,
-            String location,
-            String primaryImageUrl
-    );
 
-    StockItem addOrUpdateStock(
-            Long inventoryId,
+    Inventory addOrUpdateStock(
+            Long sellerId,
+            OwnerType role,
             Long productId,
             Integer quantity,
             Integer reorderLevel,
@@ -40,11 +34,12 @@ public interface InventoryService {
 
     CatalogueInventoryResponse getInventoryByProductId(Long productId);
 
-    Integer getAvailableQuantity(Long productId);
+    Integer getAvailableQuantity(Long productId, Long sellerId, String sellerRole);
 
     boolean hasSufficientStock(Long productId, Integer requestedQty);
 
     List<InventoryAvailabilityResponse> getAvailabilityForProducts(
+            Long sellerId,
             List<Long> productIds
     );
 

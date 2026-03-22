@@ -34,7 +34,7 @@ public class MasterDataController {
         return masterDataService.createUnit(request);
     }
 
-    /* -------- GET -------- */
+    /* -------- GET ALL -------- */
 
     @GetMapping("/brands")
     public List<IdNameResponse> getBrands() {
@@ -49,5 +49,39 @@ public class MasterDataController {
     @GetMapping("/units")
     public List<IdNameResponse> getUnits() {
         return masterDataService.getAllUnits();
+    }
+
+    /* -------- CATEGORY SPECIAL -------- */
+
+    @GetMapping("/categories/root")
+    public List<IdNameResponse> getRootCategories() {
+        return masterDataService.getRootCategories();
+    }
+
+    @GetMapping("/categories/{id}/children")
+    public List<IdNameResponse> getChildCategories(
+            @PathVariable Long id) {
+        return masterDataService.getChildCategories(id);
+    }
+
+    @PostMapping("/brands/bulk")
+    public List<IdNameResponse> createBrandsBulk(
+            @RequestBody List<CreateBrandRequest> requests) {
+
+        return masterDataService.createBrandsBulk(requests);
+    }
+
+    @PostMapping("/units/bulk")
+    public List<IdNameResponse> createUnitsBulk(
+            @RequestBody List<CreateUnitRequest> requests) {
+
+        return masterDataService.createUnitsBulk(requests);
+    }
+
+    @PostMapping("/categories/bulk")
+    public List<IdNameResponse> createCategoriesBulk(
+            @RequestBody List<CreateCategoryRequest> requests) {
+
+        return masterDataService.createCategoriesBulk(requests);
     }
 }

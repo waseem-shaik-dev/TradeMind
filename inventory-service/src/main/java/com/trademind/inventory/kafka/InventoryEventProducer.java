@@ -2,7 +2,7 @@ package com.trademind.inventory.kafka;
 
 import com.trademind.events.checkout.common.EventMetadata;
 import com.trademind.events.inventory.InventoryReserveFailedEvent;
-import com.trademind.inventory.entity.StockItem;
+import com.trademind.inventory.entity.Inventory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -23,11 +23,11 @@ public class InventoryEventProducer {
     private static final int EVENT_VERSION = 1;
 
 
-    public void publishStockUpdated(StockItem stock) {
+    public void publishStockUpdated(Inventory inventory) {
         kafkaTemplate.send(
                 "STOCK_UPDATED_TOPIC",
-                stock.getProductId().toString(),
-                stock
+                inventory.getProductId().toString(),
+                inventory
         );
     }
 

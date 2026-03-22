@@ -32,6 +32,7 @@ public record OrderFullViewDto(
         List<OrderAction> availableActions,
 
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt ,
+        Boolean invoiceAvailable
 
 ) {}

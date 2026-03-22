@@ -2,7 +2,6 @@ package com.trademind.inventory.controller;
 
 import com.trademind.inventory.dto.*;
 import com.trademind.inventory.entity.Inventory;
-import com.trademind.inventory.entity.StockItem;
 import com.trademind.inventory.enums.MovementType;
 import com.trademind.inventory.enums.OwnerType;
 import com.trademind.inventory.service.InventoryService;
@@ -19,17 +18,6 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
-    @PostMapping
-    public Inventory createInventory(
-            @RequestBody CreateInventoryRequest request) {
-
-        return inventoryService.createInventory(
-                request.ownerId(),
-                request.ownerType(),
-                request.location(),
-                request.primaryImageUrl()
-        );
-    }
 
 
     @GetMapping("/owner/{ownerId}")
@@ -43,16 +31,20 @@ public class InventoryController {
 
 
     @PostMapping("/{inventoryId}/stock")
-    public StockItem updateStock(
+    public Inventory updateStock(
             @PathVariable Long inventoryId,
             @RequestParam Long productId,
             @RequestParam Integer quantity,
             @RequestParam Integer reorderLevel,
             @RequestParam String referenceId,
-            @RequestParam MovementType type) {
+            @RequestParam MovementType type,
+            @RequestHeader("x-user-id") Long sellerId,
+            @RequestHeader("x-user-role") OwnerType sellerRole
+            ) {
 
         return inventoryService.addOrUpdateStock(
-                inventoryId,
+                sellerId,
+                sellerRole,
                 productId,
                 quantity,
                 reorderLevel,
@@ -85,10 +77,12 @@ public class InventoryController {
     }
 
     // INTERNAL – Cart validation
-    @GetMapping("/internal/{productId}/available")
+    @GetMapping("/internal/available")
     public Integer getAvailableQuantity(
-            @PathVariable Long productId) {
-        return inventoryService.getAvailableQuantity(productId);
+            @RequestParam Long productId,
+            @RequestParam Long sellerId,
+            @RequestParam String sellerRole) {
+        return inventoryService.getAvailableQuantity(productId,sellerId,sellerRole);
     }
 
     @GetMapping("/internal/{productId}/validate")
@@ -99,11 +93,12 @@ public class InventoryController {
     }
 
     // INTERNAL – Batch inventory fetch for cart
-    @PostMapping("/internal/availability")
+    @PostMapping("/internal/seller/{sellerId}/availability")
     public List<InventoryAvailabilityResponse> getAvailabilityForProducts(
+            @PathVariable Long sellerId,
             @RequestBody List<Long> productIds) {
 
-        return inventoryService.getAvailabilityForProducts(productIds);
+        return inventoryService.getAvailabilityForProducts(sellerId,productIds);
     }
 
     @PostMapping("/cancel/{checkoutId}")

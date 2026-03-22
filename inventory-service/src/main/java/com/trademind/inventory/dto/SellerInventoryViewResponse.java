@@ -6,9 +6,15 @@ public record SellerInventoryViewResponse(
 
         Long inventoryId,
         Long productId,
+
         Long sourceId,
         String sourceRole,
-        Integer availableQuantity,
-        BigDecimal price
+
+        String productName,
+
+        Integer quantityAvailable,
+        BigDecimal price,
+
+        String primaryImageUrl
 
 ) {}

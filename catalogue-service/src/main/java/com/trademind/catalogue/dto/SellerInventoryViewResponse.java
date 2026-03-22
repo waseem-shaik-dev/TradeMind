@@ -8,7 +8,8 @@ public record SellerInventoryViewResponse(
         Long productId,
         Long sourceId,
         String sourceRole,
-        Integer availableQuantity,
+        String productName,
+        Integer quantityAvailable,
         BigDecimal price
 
 ) {}

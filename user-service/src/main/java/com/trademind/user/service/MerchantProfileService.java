@@ -9,5 +9,5 @@ public interface MerchantProfileService {
 
     MerchantProfileDto updateMyProfile(Long userId, MerchantProfileDto dto);
 
-    MerchantProfileDto verifyMerchant(Long userId, boolean verified);
+  //  MerchantProfileDto verifyMerchant(Long userId, boolean verified);
 }

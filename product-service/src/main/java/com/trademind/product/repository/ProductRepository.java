@@ -21,7 +21,7 @@ public interface ProductRepository
     List<Product> findByIdIn(List<Long> ids);
 
     @Query("""
-            SELECT new com.trademind.product.dto.projection.SellerProductProjection(
+            SELECT new com.trademind.product.dto.SellerProductProjection(
                 p.id,
                 p.name,
                 p.sku,

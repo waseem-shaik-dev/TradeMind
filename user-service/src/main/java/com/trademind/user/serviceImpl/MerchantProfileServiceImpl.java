@@ -29,21 +29,11 @@ public class MerchantProfileServiceImpl implements MerchantProfileService {
 
         profile.setBusinessName(dto.businessName());
         profile.setBusinessEmail(dto.businessEmail());
-        profile.setGstNumber(dto.gstNumber());
-        profile.setLicenseNumber(dto.licenseNumber());
-        profile.setLatitude(dto.latitude());
-        profile.setLongitude(dto.longitude());
-        profile.setMapUrl(dto.mapUrl());
 
         return merchantProfileMapper.toDto(profile);
     }
 
-    @Override
-    public MerchantProfileDto verifyMerchant(Long userId, boolean verified) {
-        MerchantProfile profile = getProfile(userId);
-        profile.setVerified(verified);
-        return merchantProfileMapper.toDto(profile);
-    }
+
 
     private MerchantProfile getProfile(Long userId) {
         return merchantProfileRepository.findByUser_Id(userId)

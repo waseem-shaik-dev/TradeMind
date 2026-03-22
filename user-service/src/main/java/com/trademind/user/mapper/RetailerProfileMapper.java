@@ -13,12 +13,7 @@ public class RetailerProfileMapper {
 
         return new RetailerProfileDto(
                 entity.getShopName(),
-                entity.getShopEmail(),
-                entity.getGstNumber(),
-                entity.getLatitude(),
-                entity.getLongitude(),
-                entity.getMapUrl(),
-                entity.getVerified()
+                entity.getShopEmail()
         );
     }
 
@@ -29,11 +24,6 @@ public class RetailerProfileMapper {
                 .user(user)
                 .shopName(dto.shopName())
                 .shopEmail(dto.shopEmail())
-                .gstNumber(dto.gstNumber())
-                .latitude(dto.latitude())
-                .longitude(dto.longitude())
-                .mapUrl(dto.mapUrl())
-                .verified(dto.verified())
                 .build();
     }
 

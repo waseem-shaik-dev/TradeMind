@@ -1,17 +1,19 @@
 package com.trademind.audit.service;
 
-import com.trademind.audit.entity.AuditLog;
-
-import java.util.List;
+import com.trademind.audit.dto.AuditLogResponseDto;
+import com.trademind.audit.dto.AuditLogSearchRequestDto;
+import com.trademind.events.audit.AuditEvent;
+import org.springframework.data.domain.Page;
 
 public interface AuditLogService {
 
-    List<AuditLog> getAll();
+    /**
+     * Process incoming Kafka event
+     */
+    void processAuditEvent(AuditEvent event);
 
-    List<AuditLog> getByUser(Long userId);
-
-    List<AuditLog> getByService(String serviceName);
-
-    List<AuditLog> getByEntity(String entity, String entityId);
+    /**
+     * Search audit logs with filters
+     */
+    Page<AuditLogResponseDto> search(AuditLogSearchRequestDto request);
 }
-

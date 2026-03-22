@@ -11,6 +11,8 @@ public record CatalogueProductSummaryResponse(
         BigDecimal price,
         String imageUrl,
         Integer quantityAvailable,
-        boolean outOfStock
+        boolean outOfStock,
+        Long sourceId,
+        String SourceRole
 ) {}
 

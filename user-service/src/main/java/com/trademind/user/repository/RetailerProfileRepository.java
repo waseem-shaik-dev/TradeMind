@@ -1,6 +1,9 @@
 package com.trademind.user.repository;
 
 import com.trademind.user.entity.RetailerProfile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -12,8 +15,12 @@ public interface RetailerProfileRepository extends JpaRepository<RetailerProfile
 
     boolean existsByUser_Id(Long userId);
 
-    // Verification
-    List<RetailerProfile> findByVerified(Boolean verified);
 
-    Optional<RetailerProfile> findByGstNumber(String gstNumber);
+    @EntityGraph(attributePaths = {"storeAddress", "user"})
+    Page<RetailerProfile> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"storeAddress", "user"})
+    Page<RetailerProfile> findByShopNameContainingIgnoreCase(String keyword, Pageable pageable);
+
+
 }

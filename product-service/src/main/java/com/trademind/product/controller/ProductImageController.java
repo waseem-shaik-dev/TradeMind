@@ -34,6 +34,7 @@ public class ProductImageController {
     }
 
 
+
     @GetMapping
     public List<ProductImageResponse> getProductImages(
             @PathVariable Long productId) {

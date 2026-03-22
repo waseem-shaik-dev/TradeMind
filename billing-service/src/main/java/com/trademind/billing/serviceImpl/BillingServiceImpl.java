@@ -1,100 +1,105 @@
 package com.trademind.billing.serviceImpl;
 
-import com.trademind.billing.dto.BillItemRequest;
-import com.trademind.billing.dto.BillResponse;
-import com.trademind.billing.dto.CreateBillRequest;
-import com.trademind.billing.entity.Bill;
-import com.trademind.billing.entity.BillHash;
-import com.trademind.billing.entity.BillItem;
-import com.trademind.billing.enums.PaymentStatus;
-import com.trademind.billing.kafka.BillingEventProducer;
-import com.trademind.billing.repository.BillHashRepository;
-import com.trademind.billing.repository.BillItemRepository;
-import com.trademind.billing.repository.BillRepository;
+import com.trademind.billing.dto.InvoiceResponseDto;
+import com.trademind.billing.dto.InvoiceSummaryDto;
+import com.trademind.billing.entity.Invoice;
+import com.trademind.billing.enums.SourceType;
+import com.trademind.billing.mapper.InvoiceMapper;
+import com.trademind.billing.repository.InvoiceRepository;
 import com.trademind.billing.service.BillingService;
-import com.trademind.billing.util.HashUtil;
-import com.trademind.billing.webclient.ProductClient;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class BillingServiceImpl implements BillingService {
 
-    private final BillRepository billRepo;
-    private final BillItemRepository itemRepo;
-    private final BillHashRepository hashRepo;
-    private final ProductClient productClient;
-    private final BillingEventProducer producer;
-    private final HashUtil hashUtil;
+    private final InvoiceRepository invoiceRepository;
+    private final InvoiceMapper invoiceMapper;
+
+    // ============================================================
+    // CUSTOMER (Buyer)
+    // ============================================================
 
     @Override
-    public BillResponse generateBill(CreateBillRequest request) {
+    @Transactional(readOnly = true)
+    public Page<InvoiceSummaryDto> getMyInvoices(
+            Long userId,
+            Pageable pageable
+    ) {
+        return invoiceRepository.findByUserId(userId, pageable)
+                .map(invoiceMapper::toSummaryDto);
+    }
 
-        Bill bill = billRepo.save(
-                Bill.builder()
-                        .billNumber(UUID.randomUUID().toString())
-                        .retailerId(request.retailerId())
-                        .customerId(request.customerId())
-                        .paymentStatus(PaymentStatus.UNPAID)
-                        .billDate(LocalDateTime.now())
-                        .totalAmount(BigDecimal.ZERO)
-                        .build()
-        );
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceResponseDto getInvoiceDetailForCustomer(
+            Long invoiceId,
+            Long userId
+    ) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new IllegalStateException("Invoice not found"));
 
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (BillItemRequest reqItem : request.items()) {
-
-            BigDecimal price = productClient.getProductPrice(reqItem.productId());
-            BigDecimal lineTotal = price.multiply(
-                    BigDecimal.valueOf(reqItem.quantity())
-            );
-
-            itemRepo.save(new BillItem(
-                    null,
-                    bill.getId(),
-                    reqItem.productId(),
-                    reqItem.quantity(),
-                    price,
-                    lineTotal
-            ));
-
-            producer.publishStockOut(
-                    reqItem.productId(),
-                    reqItem.quantity(),
-                    bill.getId()
-            );
-
-            total = total.add(lineTotal);
+        if (!invoice.getUserId().equals(userId)) {
+            throw new IllegalStateException("Unauthorized access");
         }
 
-        bill.setTotalAmount(total);
-        billRepo.save(bill);
+        return invoiceMapper.toResponseDto(invoice);
+    }
 
-        String hash = hashUtil.sha256(
-                bill.getBillNumber() + total + bill.getBillDate()
-        );
+    // ============================================================
+    // SELLER (Merchant / Retailer)
+    // ============================================================
 
-        hashRepo.save(new BillHash(
-                null,
-                bill.getId(),
-                hash,
-                "SHA-256",
-                LocalDateTime.now()
-        ));
+    @Override
+    @Transactional(readOnly = true)
+    public Page<InvoiceSummaryDto> getSellerInvoices(
+            Long sourceId,
+            SourceType sourceType,
+            Pageable pageable
+    ) {
+        return invoiceRepository
+                .findBySourceIdAndSourceType(sourceId, sourceType, pageable)
+                .map(invoiceMapper::toSummaryDto);
+    }
 
-        return BillResponse.builder()
-                .billId(bill.getId())
-                .billNumber(bill.getBillNumber())
-                .totalAmount(total)
-                .hash(hash)
-                .build();
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceResponseDto getInvoiceDetailForSeller(
+            Long invoiceId,
+            Long sourceId
+    ) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new IllegalStateException("Invoice not found"));
+
+        if (!invoice.getSourceId().equals(sourceId)) {
+            throw new IllegalStateException("Unauthorized access");
+        }
+
+        return invoiceMapper.toResponseDto(invoice);
+    }
+
+    // ============================================================
+    // ADMIN
+    // ============================================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<InvoiceSummaryDto> getAllInvoices(Pageable pageable) {
+        return invoiceRepository.findAll(pageable)
+                .map(invoiceMapper::toSummaryDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InvoiceResponseDto getInvoiceDetailForAdmin(Long invoiceId) {
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new IllegalStateException("Invoice not found"));
+
+        return invoiceMapper.toResponseDto(invoice);
     }
 }

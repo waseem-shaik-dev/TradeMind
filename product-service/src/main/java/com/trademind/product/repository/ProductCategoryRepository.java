@@ -9,4 +9,11 @@ public interface ProductCategoryRepository
         extends JpaRepository<ProductCategory, Long> {
 
     List<ProductCategory> findByParentCategoryId(Long parentCategoryId);
+
+    List<ProductCategory> findByParentCategoryIdIsNull();
+
+    boolean existsByNameIgnoreCaseAndParentCategoryId(
+            String name,
+            Long parentCategoryId
+    );
 }

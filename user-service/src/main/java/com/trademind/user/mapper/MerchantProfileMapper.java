@@ -13,13 +13,7 @@ public class MerchantProfileMapper {
 
         return new MerchantProfileDto(
                 entity.getBusinessName(),
-                entity.getBusinessEmail(),
-                entity.getGstNumber(),
-                entity.getLicenseNumber(),
-                entity.getLatitude(),
-                entity.getLongitude(),
-                entity.getMapUrl(),
-                entity.getVerified()
+                entity.getBusinessEmail()
         );
     }
 
@@ -30,12 +24,6 @@ public class MerchantProfileMapper {
                 .user(user)
                 .businessName(dto.businessName())
                 .businessEmail(dto.businessEmail())
-                .gstNumber(dto.gstNumber())
-                .licenseNumber(dto.licenseNumber())
-                .latitude(dto.latitude())
-                .longitude(dto.longitude())
-                .mapUrl(dto.mapUrl())
-                .verified(dto.verified())
                 .build();
     }
 }
