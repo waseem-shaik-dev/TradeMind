@@ -103,7 +103,7 @@ public class CartServiceImpl implements CartService {
 
         // 🔹 Batch inventory fetch
         var availabilityMap =
-                inventoryClient.getAvailabilityForProducts(productIds)
+                inventoryClient.getAvailabilityForProducts(cart.getSourceId(),productIds)
                         .stream()
                         .collect(java.util.stream.Collectors.toMap(
                                 InventoryClient.InventoryAvailabilityDto::productId,
@@ -189,17 +189,12 @@ public class CartServiceImpl implements CartService {
                 .findByUserIdAndSourceIdAndSourceTypeAndStatus(
                         userId,
                         request.sourceId(),
-                        SourceType.valueOf(request.sourceType()),
+                        SourceType.valueOf(request.sourceRole()),
                         CartStatus.ACTIVE
                 )
                 .orElseGet(() -> createCart(userId, request));
 
-        CatalogueClient.CatalogueProductDto product =
-                catalogueClient.getProduct(request.productId());
 
-        if (!product.getSourceId().equals(request.sourceId())) {
-            throw new RuntimeException("Product does not belong to this source");
-        }
 
         CartItem item = cartItemRepository
                 .findByCartIdAndProductId(cart.getId(), request.productId())
@@ -208,7 +203,7 @@ public class CartServiceImpl implements CartService {
         if (item == null) {
             item = CartItem.builder()
                     .productId(request.productId())
-                    .unitPrice(product.getPrice())
+                    .unitPrice(request.price())
                     .quantity(0)
                     .available(true)
                     .build();
@@ -218,7 +213,7 @@ public class CartServiceImpl implements CartService {
         }
 
         Integer availableQty =
-                inventoryClient.getAvailableQuantity(request.productId());
+                inventoryClient.getAvailableQuantity(request.productId(),request.sourceId(),request.sourceRole());
 
         int finalQty = item.getQuantity() + request.quantity();
 
@@ -281,7 +276,7 @@ public class CartServiceImpl implements CartService {
         }
 
         Integer availableQty =
-                inventoryClient.getAvailableQuantity(item.getProductId());
+                inventoryClient.getAvailableQuantity(item.getProductId(),cart.getSourceId(),cart.getSourceType().name());
 
         if (availableQty < request.quantity()) {
             throw new RuntimeException(
@@ -369,7 +364,7 @@ public class CartServiceImpl implements CartService {
 
         // 3️⃣ Fetch inventory availability (batch)
         var availabilityList =
-                inventoryClient.getAvailabilityForProducts(productIds);
+                inventoryClient.getAvailabilityForProducts(cart.getSourceId(),productIds);
 
         var availabilityMap =
                 availabilityList.stream()
@@ -450,7 +445,7 @@ public class CartServiceImpl implements CartService {
         Cart cart = Cart.builder()
                 .userId(userId)
                 .sourceId(request.sourceId())
-                .sourceType(SourceType.valueOf(request.sourceType()))
+                .sourceType(SourceType.valueOf(request.sourceRole()))
                 .status(CartStatus.ACTIVE)
                 .active(true)
                 .build();
@@ -539,7 +534,7 @@ public class CartServiceImpl implements CartService {
 
         // Batch inventory fetch
         var availabilityList =
-                inventoryClient.getAvailabilityForProducts(productIds);
+                inventoryClient.getAvailabilityForProducts(cart.getSourceId(),productIds);
 
         var availabilityMap =
                 availabilityList.stream()

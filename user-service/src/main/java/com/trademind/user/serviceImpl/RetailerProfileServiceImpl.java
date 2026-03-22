@@ -29,18 +29,7 @@ public class RetailerProfileServiceImpl implements RetailerProfileService {
 
         profile.setShopName(dto.shopName());
         profile.setShopEmail(dto.shopEmail());
-        profile.setGstNumber(dto.gstNumber());
-        profile.setLatitude(dto.latitude());
-        profile.setLongitude(dto.longitude());
-        profile.setMapUrl(dto.mapUrl());
 
-        return retailerProfileMapper.toDto(profile);
-    }
-
-    @Override
-    public RetailerProfileDto verifyRetailer(Long userId, boolean verified) {
-        RetailerProfile profile = getProfile(userId);
-        profile.setVerified(verified);
         return retailerProfileMapper.toDto(profile);
     }
 

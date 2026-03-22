@@ -4,6 +4,7 @@ import com.trademind.events.order.OrderPaymentUpdatedEvent;
 import com.trademind.order.entity.Order;
 import com.trademind.order.enums.OrderStatus;
 import com.trademind.order.enums.PaymentStatus;
+import com.trademind.order.kafka.producer.BillingEventProducer;
 import com.trademind.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderPaymentUpdatedConsumer {
 
     private final OrderRepository orderRepository;
+    private final BillingEventProducer billingEventProducer;
 
     @KafkaListener(
             topics = "order.payment.updated",
@@ -54,6 +56,9 @@ public class OrderPaymentUpdatedConsumer {
 
                 order.setPaymentStatus(PaymentStatus.PAID);
                 order.setOrderStatus(OrderStatus.AWAITING_ACCEPTANCE);
+
+                //  TRIGGER BILLING
+                billingEventProducer.publishBillingEvent(order);
 
                 log.info("Order {} marked as CONFIRMED (payment successful)",
                         order.getId());

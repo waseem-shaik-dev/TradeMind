@@ -58,6 +58,11 @@ public class GatewayRoutesConfig {
                         .path("/api/cart/**")
                         .uri("http://localhost:8091"))
 
+                .route("catalogue-service",r->r
+                        .path("/api/catalogue/**")
+                        .uri("http://localhost:8092"))
+
+
                 .route("checkout-service",r->r
                         .path("/api/checkout/**")
                         .uri("http://localhost:8093"))

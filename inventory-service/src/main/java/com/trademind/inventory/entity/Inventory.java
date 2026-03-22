@@ -2,32 +2,64 @@ package com.trademind.inventory.entity;
 
 import com.trademind.inventory.enums.OwnerType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "inventories")
-@Getter
-@Setter
+@Table(
+        name = "inventories",
+        uniqueConstraints = @UniqueConstraint(
+                columnNames = {"product_id","seller_id","seller_role"}
+        )
+)
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Inventory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long ownerId;// retailerId or merchantId
+    @NotBlank
+    private Long productId;
+
+    private Long sellerId;
 
     @Enumerated(EnumType.STRING)
-    private OwnerType ownerType;
+    private OwnerType sellerRole;
+
+    private Integer quantityAvailable;
+
+    private BigDecimal price;
+
+    private Integer reorderLevel;
+
+    private String productName;
+
+    @Column(nullable = false)
+    private boolean outOfStock;
 
     @Column(length = 1024)
     private String primaryImageUrl;
 
-    private String location;
-
+    @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    void onCreate(){
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    void onUpdate(){
+        updatedAt = LocalDateTime.now();
+    }
 }

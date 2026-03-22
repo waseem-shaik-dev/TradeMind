@@ -16,7 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -24,127 +25,103 @@ import java.util.Optional;
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepo;
-    private final StockItemRepository stockRepo;
     private final StockMovementRepository movementRepo;
     private final LowStockAlertRepository alertRepo;
     private final InventoryEventProducer producer;
     private final StockReservationRepository reservationRepo;
 
-    @Override
-    public Inventory createInventory(
-            Long ownerId,
-            OwnerType ownerType,
-            String location,
-            String primaryImageUrl) {
 
-        String finalImageUrl =
-                (primaryImageUrl == null || primaryImageUrl.isBlank())
-                        ? null
-                        : primaryImageUrl;
-
-        return inventoryRepo.save(
-                Inventory.builder()
-                        .ownerId(ownerId)
-                        .ownerType(ownerType)
-                        .location(location)
-                        .primaryImageUrl(finalImageUrl)
-                        .createdAt(LocalDateTime.now())
-                        .build()
-        );
-    }
 
     @Override
     public List<CatalogueInventoryResponse> getInventoryForCatalogue(
             OwnerType ownerType) {
 
-        return inventoryRepo.findByOwnerType(ownerType)
+        return inventoryRepo.findBySellerRole(ownerType)
                 .stream()
-                .flatMap(inventory ->
-                        stockRepo.findByInventoryId(inventory.getId())
-                                .stream()
-                                .map(stock -> new CatalogueInventoryResponse(
-                                        stock.getProductId(),
-                                        stock.getQuantityAvailable(),
-                                        stock.isOutOfStock()
-                                ))
-                )
+                .map(inv -> new CatalogueInventoryResponse(
+                        inv.getProductId(),
+                        inv.getSellerId(),
+                        inv.getSellerRole().name(),
+                        inv.getQuantityAvailable(),
+                        inv.isOutOfStock()
+                ))
                 .toList();
     }
 
     @Override
     public CatalogueInventoryResponse getInventoryByProductId(Long productId) {
 
-        StockItem stock = stockRepo.findByProductId(productId)
+        Inventory inv = inventoryRepo.findByProductId(productId)
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
 
         return new CatalogueInventoryResponse(
-                stock.getProductId(),
-                stock.getQuantityAvailable(),
-                stock.isOutOfStock()
+                inv.getProductId(),
+                inv.getSellerId(),
+                inv.getSellerRole().name(),
+                inv.getQuantityAvailable(),
+                inv.isOutOfStock()
         );
     }
 
 
     @Override
     public List<InventoryStockResponse> getInventoriesByOwner(
-            Long ownerId,
-            OwnerType ownerType) {
+            Long sellerId,
+            OwnerType role) {
 
-        List<Inventory> inventories =
-                inventoryRepo.findByOwnerIdAndOwnerType(ownerId, ownerType);
-
-        return inventories.stream()
-                .flatMap(inventory ->
-                        stockRepo.findByInventoryId(inventory.getId())
-                                .stream()
-                                .map(stock -> new InventoryStockResponse(
-                                        inventory.getId(),
-                                        inventory.getOwnerId(),
-                                        inventory.getLocation(),
-                                        inventory.getPrimaryImageUrl(),
-                                        stock.getId(),
-                                        stock.getProductId(),
-                                        stock.getQuantityAvailable(),
-                                        stock.isOutOfStock(),
-                                        stock.getReorderLevel(),
-
-                                        inventory.getCreatedAt()
-                                ))
-                )
+        return inventoryRepo.findBySellerId(sellerId)
+                .stream()
+                .map(inv -> new InventoryStockResponse(
+                        inv.getId(),
+                        inv.getSellerId(),
+                        inv.getSellerRole().name(),
+                        inv.getProductId(),
+                        inv.getQuantityAvailable(),
+                        inv.getPrice(),
+                        inv.getProductName(),
+                        inv.isOutOfStock(),
+                        inv.getReorderLevel(),
+                        inv.getPrimaryImageUrl(),
+                        inv.getCreatedAt()
+                ))
                 .toList();
     }
 
 
     @Override
-    public StockItem addOrUpdateStock(
-            Long inventoryId,
+    public Inventory addOrUpdateStock(
+            Long sellerId,
+            OwnerType role,
             Long productId,
             Integer quantity,
             Integer reorderLevel,
             String referenceId,
             MovementType type) {
 
-        StockItem stock = stockRepo
-                .findByInventoryIdAndProductId(inventoryId, productId)
-                .orElseGet(() -> {
-                    StockItem s = new StockItem();
-                    s.setInventoryId(inventoryId);
-                    s.setProductId(productId);
-                    s.setQuantityAvailable(0);
-                    return s;
-                });
+        Inventory inv = inventoryRepo
+                .findByProductIdAndSellerIdAndSellerRole(
+                        productId,
+                        sellerId,
+                        role
+                )
+                .orElseGet(() -> Inventory.builder()
+                        .productId(productId)
+                        .sellerId(sellerId)
+                        .sellerRole(role)
+                        .quantityAvailable(0)
+                        .build());
 
         int updatedQty = switch (type) {
-            case IN -> stock.getQuantityAvailable() + quantity;
-            case OUT -> stock.getQuantityAvailable() - quantity;
+            case IN -> inv.getQuantityAvailable() + quantity;
+            case OUT -> inv.getQuantityAvailable() - quantity;
             case ADJUSTMENT -> quantity;
         };
 
-        stock.setQuantityAvailable(updatedQty);
-        stock.setReorderLevel(reorderLevel);
-        stock.setOutOfStock(updatedQty <= 0);
+        inv.setQuantityAvailable(updatedQty);
+        inv.setReorderLevel(reorderLevel);
+        inv.setOutOfStock(updatedQty <= 0);
 
-        StockItem saved = stockRepo.save(stock);
+        Inventory saved = inventoryRepo.save(inv);
 
         movementRepo.save(
                 new StockMovement(
@@ -158,120 +135,107 @@ public class InventoryServiceImpl implements InventoryService {
         );
 
         checkLowStock(saved);
-      //  producer.publishStockUpdated(saved);
 
         return saved;
     }
 
-    private void checkLowStock(StockItem stock) {
-        if (stock.getQuantityAvailable() <= stock.getReorderLevel()) {
-            alertRepo.findByStockItemIdAndResolvedFalse(stock.getId())
-                    .orElseGet(() -> alertRepo.save(
-                            new LowStockAlert(
-                                    null,
-                                    stock.getId(),
-                                    LocalDateTime.now(),
-                                    false
-                            )
-                    ));
+    private void checkLowStock(Inventory inv) {
+
+        if (inv.getQuantityAvailable() <= inv.getReorderLevel()) {
+
+            alertRepo.findByStockItemIdAndResolvedFalse(inv.getId())
+                    .orElseGet(() ->
+                            alertRepo.save(
+                                    new LowStockAlert(
+                                            null,
+                                            inv.getId(),
+                                            LocalDateTime.now(),
+                                            false
+                                    )
+                            ));
         }
     }
 
     @Override
-    public List<InventoryStockResponse> getInventoryWithStock(Long inventoryId) {
+    public List<InventoryStockResponse> getInventoryWithStock(Long sellerId) {
 
-        Inventory inventory = inventoryRepo.findById(inventoryId)
-                .orElseThrow(() -> new RuntimeException("Inventory not found"));
-
-        return stockRepo.findByInventoryId(inventoryId)
+        return inventoryRepo.findBySellerId(sellerId)
                 .stream()
-                .map(stock -> new InventoryStockResponse(
-                        inventory.getId(),
-                        inventory.getOwnerId(),
-                        inventory.getLocation(),
-                        inventory.getPrimaryImageUrl(),
-                        stock.getId(),
-                        stock.getProductId(),
-                        stock.getQuantityAvailable(),
-                        stock.isOutOfStock(),
-                        stock.getReorderLevel(),
-                        inventory.getCreatedAt()
+                .map(inv -> new InventoryStockResponse(
+                        inv.getId(),
+                        inv.getSellerId(),
+                        inv.getSellerRole().name(),
+                        inv.getProductId(),
+                        inv.getQuantityAvailable(),
+                        inv.getPrice(),
+                        inv.getProductName(),
+                        inv.isOutOfStock(),
+                        inv.getReorderLevel(),
+                        inv.getPrimaryImageUrl(),
+                        inv.getCreatedAt()
                 ))
                 .toList();
     }
 
     @Override
-    public void deleteStockItem(Long stockItemId) {
+    public void deleteStockItem(Long inventoryId) {
 
-        StockItem stock = stockRepo.findById(stockItemId)
-                .orElseThrow(() -> new RuntimeException("Stock item not found"));
+        Inventory inv = inventoryRepo.findById(inventoryId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found"));
 
-        Long inventoryId = stock.getInventoryId();
-        stockRepo.delete(stock);
-
-        // delete inventory if no stock remains
-        if (!stockRepo.existsByInventoryId(inventoryId)) {
-            inventoryRepo.deleteById(inventoryId);
-        }
+        inventoryRepo.delete(inv);
     }
 
     @Override
-    public Integer getAvailableQuantity(Long productId) {
+    public Integer getAvailableQuantity(Long productId, Long sellerId, String sellerRole) {
 
-        StockItem stock = stockRepo.findByProductId(productId)
+        Inventory inv = inventoryRepo.findByProductIdAndSellerIdAndSellerRole(productId,sellerId,OwnerType.valueOf(sellerRole))
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
 
-        return stock.getQuantityAvailable();
+        return inv.getQuantityAvailable();
     }
 
     @Override
     public boolean hasSufficientStock(Long productId, Integer requestedQty) {
 
-        StockItem stock = stockRepo.findByProductId(productId)
+        Inventory inv = inventoryRepo.findByProductId(productId)
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
 
-        return stock.getQuantityAvailable() >= requestedQty;
+        return inv.getQuantityAvailable() >= requestedQty;
     }
 
     @Override
     public List<InventoryAvailabilityResponse> getAvailabilityForProducts(
+            Long sellerId,
             List<Long> productIds) {
 
         if (productIds == null || productIds.isEmpty()) {
             return List.of();
         }
 
-        return stockRepo.findByProductIdIn(productIds)
-                .stream()
-                .map(stock -> new InventoryAvailabilityResponse(
-                        stock.getProductId(),
-                        stock.getQuantityAvailable(),
-                        stock.isOutOfStock()
-                ))
-                .toList();
+        return inventoryRepo.findAvailabilityByProductsAndSeller(
+                productIds,
+                sellerId
+        );
     }
 
     // --------------------------------------------------
     // 1️⃣ RESERVE (Checkout.confirm)
     // --------------------------------------------------
     @Override
-    public void reserveStock(
-            Long checkoutId,
-            List<ItemQuantityDto> items
-    ) {
-        try {
+    public void reserveStock(Long checkoutId, List<ItemQuantityDto> items) {
 
+        try {
 
             for (ItemQuantityDto item : items) {
 
                 if (reservationRepo.existsByCheckoutIdAndProductId(
-                        checkoutId, item.productId()
-                )) {
-                    continue; // idempotent
+                        checkoutId, item.productId())) {
+                    continue;
                 }
 
-                StockItem stock = stockRepo
-                        .findByProductIdForUpdate(item.productId())
+                Inventory inv = inventoryRepo
+                        .findByProductId(item.productId())
                         .orElseThrow(() ->
                                 new IllegalStateException(
                                         "Stock not found for product "
@@ -279,19 +243,22 @@ public class InventoryServiceImpl implements InventoryService {
                                 )
                         );
 
-                if (stock.getQuantityAvailable() < item.quantity()) {
+                if (inv.getQuantityAvailable() < item.quantity()) {
                     throw new IllegalStateException(
                             "Insufficient stock for product "
                                     + item.productId()
                     );
                 }
 
-                stock.setQuantityAvailable(
-                        stock.getQuantityAvailable() - item.quantity()
+                inv.setQuantityAvailable(
+                        inv.getQuantityAvailable() - item.quantity()
                 );
-                stock.setOutOfStock(
-                        stock.getQuantityAvailable() <= 0
+
+                inv.setOutOfStock(
+                        inv.getQuantityAvailable() <= 0
                 );
+
+                inventoryRepo.save(inv);
 
                 StockReservation r = new StockReservation();
                 r.setCheckoutId(checkoutId);
@@ -302,20 +269,15 @@ public class InventoryServiceImpl implements InventoryService {
                 reservationRepo.save(r);
             }
 
-        }
+        } catch (IllegalStateException ex) {
 
-        catch (IllegalStateException ex) {
-
-            // 🔥 Fire failure event BEFORE rollback completes
             producer.publishInventoryReserveFailed(
                     checkoutId,
                     ex.getMessage()
             );
 
-            // 🔁 rollback DB transaction
             throw ex;
         }
-
     }
 
     // --------------------------------------------------
@@ -353,25 +315,25 @@ public class InventoryServiceImpl implements InventoryService {
         for (StockReservation r : reservations) {
 
             if (r.getStatus() != ReservationStatus.RESERVED) {
-                continue; // do not release committed
+                continue;
             }
 
-
-            StockItem stock = stockRepo
-                    .findByProductIdForUpdate(r.getProductId())
+            Inventory inv = inventoryRepo
+                    .findByProductId(r.getProductId())
                     .orElseThrow();
 
-            stock.setQuantityAvailable(
-                    stock.getQuantityAvailable() + r.getQuantity()
+            inv.setQuantityAvailable(
+                    inv.getQuantityAvailable() + r.getQuantity()
             );
-            stock.setOutOfStock(false);
+
+            inv.setOutOfStock(false);
+
+            inventoryRepo.save(inv);
+
             r.setStatus(ReservationStatus.RELEASED);
         }
 
-        // 🔥 cleanup
         reservationRepo.deleteAllByCheckoutId(checkoutId);
-
-
     }
 
     @Override
@@ -383,27 +345,29 @@ public class InventoryServiceImpl implements InventoryService {
         for (StockReservation r : reservations) {
 
             if (r.getStatus() != ReservationStatus.COMMITTED) {
-                continue; // only restore committed
+                continue;
             }
 
-            StockItem stock = stockRepo
-                    .findByProductIdForUpdate(r.getProductId())
+            Inventory inv = inventoryRepo
+                    .findByProductId(r.getProductId())
                     .orElseThrow();
 
-            stock.setQuantityAvailable(
-                    stock.getQuantityAvailable() + r.getQuantity()
+            inv.setQuantityAvailable(
+                    inv.getQuantityAvailable() + r.getQuantity()
             );
 
-            stock.setOutOfStock(
-                    stock.getQuantityAvailable() <= 0
+            inv.setOutOfStock(
+                    inv.getQuantityAvailable() <= 0
             );
+
+            inventoryRepo.save(inv);
 
             r.setStatus(ReservationStatus.CANCELLED);
 
             movementRepo.save(
                     new StockMovement(
                             null,
-                            stock.getId(),
+                            inv.getId(),
                             MovementType.IN,
                             r.getQuantity(),
                             "ORDER_CANCEL_" + checkoutId,
@@ -418,85 +382,109 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     @Transactional
     public void bulkUpload(
-            Long sourceId,
+            Long sellerId,
             OwnerType role,
             List<BulkInventoryRequest> items) {
 
-        if(items == null || items.isEmpty()){
+        if (items == null || items.isEmpty()) {
             return;
         }
 
-        // 1️⃣ Find or create seller inventory
-        Inventory inventory =
+        // 1️⃣ Extract productIds
+        List<Long> productIds =
+                items.stream()
+                        .map(BulkInventoryRequest::productId)
+                        .toList();
+
+
+        // 2️⃣ Fetch existing inventory in ONE query
+        List<Inventory> existingInventories =
                 inventoryRepo
-                        .findByOwnerIdAndOwnerType(sourceId, role)
-                        .orElseGet(() ->
-                                inventoryRepo.save(
-                                        Inventory.builder()
-                                                .ownerId(sourceId)
-                                                .ownerType(role)
-                                                .createdAt(LocalDateTime.now())
-                                                .build()
-                                )
+                        .findByProductIdInAndSellerIdAndSellerRole(
+                                productIds,
+                                sellerId,
+                                role
                         );
 
-        Long inventoryId = inventory.getId();
+
+        // 3️⃣ Convert to Map for O(1) lookup
+        Map<Long, Inventory> inventoryMap =
+                existingInventories.stream()
+                        .collect(Collectors.toMap(
+                                Inventory::getProductId,
+                                inv -> inv
+                        ));
 
 
-        // 2️⃣ Process each product
-        for(BulkInventoryRequest item : items){
+        List<Inventory> toSave = new ArrayList<>();
 
-            Optional<StockItem> existing =
-                    stockRepo.findByInventoryIdAndProductId(
-                            inventoryId,
-                            item.productid()
-                    );
 
-            if(existing.isPresent()){
+        // 4️⃣ Process items
+        for (BulkInventoryRequest item : items) {
 
-                StockItem stock = existing.get();
+            Inventory inv = inventoryMap.get(item.productId());
 
-                stock.setQuantityAvailable(
-                        stock.getQuantityAvailable() + item.quantity()
+            if (inv != null) {
+
+                inv.setQuantityAvailable(
+                        inv.getQuantityAvailable() + item.quantity()
                 );
 
-                stock.setPrice(item.price());
+                inv.setProductName(item.productName());
 
-                stockRepo.save(stock);
+                inv.setPrice(item.price());
 
-            }
-            else{
+                inv.setOutOfStock(
+                        inv.getQuantityAvailable() <= 0
+                );
 
-                StockItem stock =
-                        StockItem.builder()
-                                .inventoryId(inventoryId)
-                                .productId(item.productid())
+                inv.setPrimaryImageUrl(item.primaryImageUrl());
+
+                toSave.add(inv);
+
+            } else {
+
+                Inventory newInv =
+                        Inventory.builder()
+                                .productId(item.productId())
+                                .sellerId(sellerId)
+                                .sellerRole(role)
                                 .quantityAvailable(item.quantity())
+                                .productName(item.productName())
                                 .price(item.price())
+                                .primaryImageUrl(item.primaryImageUrl())
                                 .outOfStock(item.quantity() <= 0)
-                                .sourceId(sourceId)
-                                .sourceRole(role)
                                 .build();
 
-                stockRepo.save(stock);
+                toSave.add(newInv);
             }
         }
+
+        // 5️⃣ Batch save
+        inventoryRepo.saveAll(toSave);
     }
 
-    public List<SellerInventoryViewResponse> getInventoryForSeller(Long sourceId){
+    @Override
+    public List<SellerInventoryViewResponse> getInventoryForSeller(Long sellerId){
 
-        return stockRepo
-                .findBySourceId(sourceId)
+        List<SellerInventoryViewResponse> res = inventoryRepo
+                .findBySellerId(sellerId)
                 .stream()
                 .map(inv -> new SellerInventoryViewResponse(
                         inv.getId(),
                         inv.getProductId(),
-                        inv.getSourceId(),
-                        inv.getSourceRole().name(),
+                        inv.getSellerId(),
+                        inv.getSellerRole().name(),
+                        inv.getProductName(),
                         inv.getQuantityAvailable(),
-                        inv.getPrice()
+                        inv.getPrice(),
+                        inv.getPrimaryImageUrl()
                 ))
                 .toList();
+
+        System.out.println("inventory fetching : \n\n\n"+res);
+
+        return  res;
     }
 
 

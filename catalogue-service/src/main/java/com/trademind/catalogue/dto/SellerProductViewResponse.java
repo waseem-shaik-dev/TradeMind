@@ -11,6 +11,8 @@ public record SellerProductViewResponse(
         String description,
         BigDecimal currentPrice,
         String primaryImageUrl,
-        Map<String,String> attributes
+        Map<String,String> attributes,
+        Long sourceId,
+        String sourceRole
 
 ) {}

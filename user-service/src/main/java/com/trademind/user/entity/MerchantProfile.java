@@ -5,26 +5,29 @@ import lombok.*;
 
 @Entity
 @Table(name = "merchant_profiles")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MerchantProfile {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String businessName;
+
     private String businessEmail;
-    private String gstNumber;
-    private String licenseNumber;
-    private Double latitude;
-    private Double longitude;
-    private String mapUrl;
-    private Boolean verified;
+
+    private String shopImageUrl;
+    private String shopImagePublicId;
 
     @OneToOne
-    @MapsId
+    @JoinColumn(name = "store_address_id")
+    private StoreAddress storeAddress;
+
+    @OneToOne
     @JoinColumn(name = "user_id")
     private User user;
 }

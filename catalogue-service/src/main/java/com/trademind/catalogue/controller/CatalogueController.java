@@ -51,11 +51,29 @@ public class CatalogueController {
         return catalogueService.getProductsForCart(productIds);
     }
 
+
     @GetMapping("/seller/products")
     public List<SellerCatalogueProductResponse> browseProductsForSeller(
-            @RequestHeader("userId") Long sourceId){
+            @RequestHeader("x-user-Id") Long sourceId){
 
         return catalogueService.browseProductsForSeller(sourceId);
+    }
+
+
+    @GetMapping("/seller/{sellerId}/products")
+    public List<CatalogueProductSummaryResponse> browseSellerProducts(
+            @PathVariable Long sellerId) {
+
+        return catalogueService.browseProductsForSellerCatalogue(sellerId);
+    }
+
+
+    @GetMapping("/seller/{sellerId}/product/{productId}")
+    public CatalogueProductDetailResponse getSellerProductDetail(
+            @PathVariable Long sellerId,
+            @PathVariable Long productId) {
+
+        return catalogueService.getSellerProductDetail(sellerId, productId);
     }
 
 }

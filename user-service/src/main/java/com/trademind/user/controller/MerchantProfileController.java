@@ -40,15 +40,15 @@ public class MerchantProfileController {
     /**
      * Admin: Verify / unverify merchant
      */
-    @PutMapping("/{userId}/verify")
-    public MerchantProfileDto verifyMerchant(
-            @PathVariable Long userId,
-            @RequestParam boolean verified,
-            @RequestHeader("X-USER-ROLE") String role
-    ) {
-        validateAdmin(role);
-        return merchantProfileService.verifyMerchant(userId, verified);
-    }
+//    @PutMapping("/{userId}/verify")
+//    public MerchantProfileDto verifyMerchant(
+//            @PathVariable Long userId,
+//            @RequestParam boolean verified,
+//            @RequestHeader("X-USER-ROLE") String role
+//    ) {
+//        validateAdmin(role);
+//        return merchantProfileService.verifyMerchant(userId, verified);
+//    }
 
     /* ======================
        ROLE VALIDATIONS

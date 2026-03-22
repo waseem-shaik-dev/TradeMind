@@ -1,6 +1,9 @@
 package com.trademind.notification.enums;
 
 public enum NotificationStatus {
-    SENT,
-    FAILED
+
+    PENDING,     // created but not sent
+    SENT,        // successfully sent
+    FAILED,      // failed after retries
+    RETRYING     // retry in progress
 }

@@ -7,6 +7,7 @@ import com.trademind.order.dto.view.*;
 import com.trademind.order.entity.*;
 import com.trademind.order.enums.*;
 import com.trademind.order.service.validator.OrderActionResolver;
+import com.trademind.order.util.Utility;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class OrderMapper {
 
     private final OrderActionResolver actionResolver;
+    private final Utility utility;
 
 
     // ============================================================
@@ -269,9 +271,11 @@ public class OrderMapper {
                 mapLineItems(order.getLineItems()),
                 actionResolver.resolveActions(order, actor),
                 order.getCreatedAt(),
-                order.getUpdatedAt()
+                order.getUpdatedAt(),
+                utility.eligibleForBilling(order)
         );
     }
+
 
 
     private OrderPricingDto mapPricing(Order order) {

@@ -27,6 +27,9 @@ public record SellerCatalogueProductResponse(
 
         Integer availableQuantity,
 
-        BigDecimal sellerPrice
+        BigDecimal sellerPrice,
+
+        Long sourceId,
+        String SourceRole
 
 ) {}

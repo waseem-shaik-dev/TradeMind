@@ -1,7 +1,6 @@
 package com.trademind.user.bootstrap;
 
 import com.trademind.user.entity.*;
-import com.trademind.user.enums.UserRole;
 import com.trademind.user.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
@@ -70,18 +69,7 @@ public class DemoUserProfileLoader implements CommandLineRunner {
 
                             merchant.setBusinessName("Demo Merchant Pvt Ltd");
                             merchant.setBusinessEmail("merchant@demo.com");
-                            merchant.setGstNumber("29ABCDE1234F1Z5");
-                            merchant.setLicenseNumber("LIC-DEMO-001");
 
-                            // 📍 LOCATION
-                            merchant.setLatitude(17.385044);
-                            merchant.setLongitude(78.486671);
-                            merchant.setMapUrl(
-                                    "https://maps.google.com/?q=17.385044,78.486671"
-                            );
-
-                            // 🔒 DEFAULT
-                            merchant.setVerified(false);
                         });
 
                 case RETAILER -> retailerProfileRepository
@@ -90,17 +78,7 @@ public class DemoUserProfileLoader implements CommandLineRunner {
 
                             retailer.setShopName("Demo Retail Shop");
                             retailer.setShopEmail("retailer@demo.com");
-                            retailer.setGstNumber("29ABCDE9999F1Z5");
 
-                            // 📍 LOCATION
-                            retailer.setLatitude(17.387140);
-                            retailer.setLongitude(78.491684);
-                            retailer.setMapUrl(
-                                    "https://maps.google.com/?q=17.387140,78.491684"
-                            );
-
-                            // 🔒 DEFAULT
-                            retailer.setVerified(false);
                         });
             }
         });

@@ -1,8 +1,11 @@
 package com.trademind.cart.dto;
 
+import java.math.BigDecimal;
+
 public record AddToCartRequestDto(
         Long sourceId,        // merchantId or retailerId
-        String sourceType,    // MERCHANT / RETAILER
+        String sourceRole,    // MERCHANT / RETAILER
         Long productId,
-        Integer quantity
+        Integer quantity,
+        BigDecimal price
 ) {}

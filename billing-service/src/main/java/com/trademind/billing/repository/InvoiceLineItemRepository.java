@@ -1,0 +1,12 @@
+package com.trademind.billing.repository;
+
+import com.trademind.billing.entity.InvoiceLineItem;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface InvoiceLineItemRepository extends JpaRepository<InvoiceLineItem, Long> {
+
+    List<InvoiceLineItem> findByInvoiceId(Long invoiceId);
+
+}

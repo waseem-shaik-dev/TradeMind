@@ -1,39 +1,80 @@
 package com.trademind.audit.entity;
 
+
+import com.trademind.events.audit.enums.*;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
-@Table(name = "audit_logs")
+@Table(name = "audit_logs", indexes = {
+        @Index(name = "idx_audit_user_id", columnList = "userId"),
+        @Index(name = "idx_audit_entity_id", columnList = "entityId"),
+        @Index(name = "idx_audit_timestamp", columnList = "timestamp"),
+        @Index(name = "idx_audit_action", columnList = "action")
+})
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class AuditLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    private UUID id;
 
+    @Column(nullable = false, updatable = false)
+    private Instant timestamp;
+
+    @Column(nullable = false)
     private String serviceName;
 
-    private String action;       // CREATE_BILL, UPDATE_STOCK, LOGIN, etc.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuditAction action;
 
-    private String entityName;   // Bill, User, Inventory, Order
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EntityType entityType;
 
-    private String entityId;     // ID of affected entity
+    @Column(nullable = false)
+    private String entityId;
 
-    private Long performedBy;    // userId (nullable for system events)
+    private String userId;
 
-    private String role;         // ADMIN / RETAILER / CUSTOMER
+    private String userRole;
 
     private String ipAddress;
 
-    private LocalDateTime timestamp;
+    @Enumerated(EnumType.STRING)
+    private AuditStatus status;
 
-    @Column(columnDefinition = "TEXT")
-    private String metadata;     // JSON string (extra context)
+    /**
+     * JSONB fields for before & after states
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> beforeState;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> afterState;
+
+    /**
+     * Additional metadata (traceId, device, etc.)
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> metadata;
+
+    @PrePersist
+    public void prePersist() {
+        this.timestamp = Instant.now();
+    }
 }

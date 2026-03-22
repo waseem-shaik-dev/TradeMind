@@ -1,11 +1,16 @@
 package com.trademind.notification.service;
 
-import com.trademind.notification.enums.NotificationType;
+import com.trademind.events.notification.NotificationEvent;
 
 public interface NotificationService {
-    void sendNotification(
-            String email,
-            NotificationType type,
-            String message
-    );
+
+    /**
+     * Process incoming Kafka event
+     */
+    void processEvent(NotificationEvent event);
+
+    /**
+     * Retry failed notifications
+     */
+    void retryFailedNotifications();
 }

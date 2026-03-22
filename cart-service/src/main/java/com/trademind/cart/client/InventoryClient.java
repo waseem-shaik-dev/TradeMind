@@ -11,11 +11,15 @@ import java.util.List;
 )
 public interface InventoryClient {
 
-    @GetMapping("/api/inventories/internal/{productId}/available")
-    Integer getAvailableQuantity(@PathVariable Long productId);
+    @GetMapping("/api/inventories/internal/available")
+    Integer getAvailableQuantity(@RequestParam Long productId,
+                                 @RequestParam Long sellerId,
+                                 @RequestParam String sellerRole
+                                 );
 
-    @PostMapping("/api/inventories/internal/availability")
+    @PostMapping("/api/inventories/internal/seller/{sellerId}/availability")
     List<InventoryAvailabilityDto> getAvailabilityForProducts(
+            @PathVariable Long sellerId,
             @RequestBody List<Long> productIds
     );
 

@@ -40,15 +40,15 @@ public class RetailerProfileController {
     /**
      * Admin: Verify / unverify retailer
      */
-    @PutMapping("/{userId}/verify")
-    public RetailerProfileDto verifyRetailer(
-            @PathVariable Long userId,
-            @RequestParam boolean verified,
-            @RequestHeader("X-USER-ROLE") String role
-    ) {
-        validateAdmin(role);
-        return retailerProfileService.verifyRetailer(userId, verified);
-    }
+//    @PutMapping("/{userId}/verify")
+//    public RetailerProfileDto verifyRetailer(
+//            @PathVariable Long userId,
+//            @RequestParam boolean verified,
+//            @RequestHeader("X-USER-ROLE") String role
+//    ) {
+//        validateAdmin(role);
+//        return retailerProfileService.verifyRetailer(userId, verified);
+//    }
 
     /* ======================
        ROLE VALIDATIONS
