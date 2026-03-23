@@ -1,35 +1,43 @@
 package com.trademind.analytics.serviceImpl;
 
-import com.trademind.analytics.entity.SalesReport;
-import com.trademind.analytics.entity.TopSellingProduct;
-import com.trademind.analytics.repository.SalesReportRepository;
-import com.trademind.analytics.repository.TopSellingProductRepository;
+import com.trademind.analytics.aggregator.admin.AdminDashboardAggregator;
+import com.trademind.analytics.aggregator.customer.CustomerDashboardAggregator;
+import com.trademind.analytics.aggregator.merchant.MerchantDashboardAggregator;
+import com.trademind.analytics.aggregator.retailer.RetailerDashboardAggregator;
+import com.trademind.analytics.dto.admin.AdminDashboardResponse;
+import com.trademind.analytics.dto.customer.CustomerDashboardResponse;
+import com.trademind.analytics.dto.merchant.MerchantDashboardResponse;
+import com.trademind.analytics.dto.retailer.RetailerDashboardResponse;
 import com.trademind.analytics.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class AnalyticsServiceImpl implements AnalyticsService {
 
-    private final SalesReportRepository salesRepo;
-    private final TopSellingProductRepository topRepo;
+    private final AdminDashboardAggregator adminAggregator;
+    private final MerchantDashboardAggregator merchantAggregator;
+    private final RetailerDashboardAggregator retailerAggregator;
+    private final CustomerDashboardAggregator customerAggregator;
 
     @Override
-    public SalesReport getSalesReport(LocalDate date) {
-        return salesRepo.findByReportDate(date)
-                .orElseThrow(() -> new RuntimeException("No data"));
+    public AdminDashboardResponse getAdminDashboard() {
+        return adminAggregator.getDashboard();
     }
 
     @Override
-    public List<TopSellingProduct> getTopProducts(LocalDate period) {
-        return topRepo.findAll()
-                .stream()
-                .filter(p -> p.getPeriod().equals(period))
-                .toList();
+    public MerchantDashboardResponse getMerchantDashboard(Long merchantId) {
+        return merchantAggregator.getDashboard(merchantId);
+    }
+
+    @Override
+    public RetailerDashboardResponse getRetailerDashboard(Long retailerId) {
+        return retailerAggregator.getDashboard(retailerId);
+    }
+
+    @Override
+    public CustomerDashboardResponse getCustomerDashboard(Long customerId) {
+        return customerAggregator.getDashboard(customerId);
     }
 }
-

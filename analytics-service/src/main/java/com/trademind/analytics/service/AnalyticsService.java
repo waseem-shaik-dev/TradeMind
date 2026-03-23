@@ -1,15 +1,17 @@
 package com.trademind.analytics.service;
 
-import com.trademind.analytics.entity.SalesReport;
-import com.trademind.analytics.entity.TopSellingProduct;
-
-import java.time.LocalDate;
-import java.util.List;
+import com.trademind.analytics.dto.admin.AdminDashboardResponse;
+import com.trademind.analytics.dto.customer.CustomerDashboardResponse;
+import com.trademind.analytics.dto.merchant.MerchantDashboardResponse;
+import com.trademind.analytics.dto.retailer.RetailerDashboardResponse;
 
 public interface AnalyticsService {
 
-    SalesReport getSalesReport(LocalDate date);
+    AdminDashboardResponse getAdminDashboard();
 
-    List<TopSellingProduct> getTopProducts(LocalDate period);
+    MerchantDashboardResponse getMerchantDashboard(Long merchantId);
+
+    RetailerDashboardResponse getRetailerDashboard(Long retailerId);
+
+    CustomerDashboardResponse getCustomerDashboard(Long customerId);
 }
-
