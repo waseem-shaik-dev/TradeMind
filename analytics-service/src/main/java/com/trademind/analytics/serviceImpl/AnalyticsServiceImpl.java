@@ -10,6 +10,7 @@ import com.trademind.analytics.dto.merchant.MerchantDashboardResponse;
 import com.trademind.analytics.dto.retailer.RetailerDashboardResponse;
 import com.trademind.analytics.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,22 +22,30 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final RetailerDashboardAggregator retailerAggregator;
     private final CustomerDashboardAggregator customerAggregator;
 
+    // ================= ADMIN =================
     @Override
+    @Cacheable(value = "adminDashboard", key = "'admin'")
     public AdminDashboardResponse getAdminDashboard() {
         return adminAggregator.getDashboard();
     }
 
+    // ================= MERCHANT =================
     @Override
+    @Cacheable(value = "merchantDashboard", key = "#merchantId")
     public MerchantDashboardResponse getMerchantDashboard(Long merchantId) {
         return merchantAggregator.getDashboard(merchantId);
     }
 
+    // ================= RETAILER =================
     @Override
+    @Cacheable(value = "retailerDashboard", key = "#retailerId")
     public RetailerDashboardResponse getRetailerDashboard(Long retailerId) {
         return retailerAggregator.getDashboard(retailerId);
     }
 
+    // ================= CUSTOMER =================
     @Override
+    @Cacheable(value = "customerDashboard", key = "#customerId")
     public CustomerDashboardResponse getCustomerDashboard(Long customerId) {
         return customerAggregator.getDashboard(customerId);
     }
