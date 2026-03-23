@@ -25,3 +25,18 @@ spring:
 
   kafka:
     bootstrap-servers: localhost:9092
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      analyticsService:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+
+  timelimiter:
+    instances:
+      analyticsService:
+        timeoutDuration: 2s
