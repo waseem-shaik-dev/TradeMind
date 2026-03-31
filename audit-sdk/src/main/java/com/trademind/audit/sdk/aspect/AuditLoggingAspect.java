@@ -78,20 +78,21 @@ public class AuditLoggingAspect {
             }
         }
 
-        return AuditEvent.builder()
-                .eventId(UUID.randomUUID())
-                .timestamp(Instant.now())
-                .serviceName(contextProvider.getServiceName())
-                .action(annotation.action())
-                .entityType(annotation.entityType())
-                .entityId(entityId)
-                .userId(contextProvider.getCurrentUserId())
-                .userRole(contextProvider.getUserRole())
-                .ipAddress(contextProvider.getIpAddress())
-                .status(status)
-                .beforeState(captureSafe(beforeState))
-                .afterState(captureAfterState(result, annotation))
-                .build();
+        Map<String, Object> actor = contextProvider.getActor();
+
+        return new AuditEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                contextProvider.getServiceName(),
+                annotation.action(),
+                annotation.entityType(),
+                entityId,
+                actor,
+                status,
+                captureSafe(beforeState),
+                captureAfterState(result, annotation),
+                Map.of() // metadata
+        );
     }
 
     // =========================================================

@@ -10,6 +10,8 @@ public record InventoryReleaseRequestedEvent(
         EventMetadata metadata,
 
         Long checkoutId,
+        Long sourceId,
+        String sourceRole,
 
         List<ItemQuantityDto> items,
 

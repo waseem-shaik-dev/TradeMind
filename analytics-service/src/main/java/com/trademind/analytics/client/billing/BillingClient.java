@@ -1,7 +1,13 @@
 package com.trademind.analytics.client.billing;
 
+import com.trademind.analytics.client.billing.dto.AdminRevenueSummaryDto;
+import com.trademind.analytics.client.billing.dto.RevenueRequestDto;
+import com.trademind.analytics.client.billing.dto.RevenueResponseDto;
+import com.trademind.analytics.client.billing.dto.TopMerchantRawDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @FeignClient(
         name = "billing-service",
@@ -10,15 +16,18 @@ import org.springframework.web.bind.annotation.*;
 )
 public interface BillingClient {
 
-    @GetMapping("/api/billing/total-revenue")
-    String getTotalRevenue();
+    // 🔥 CORE DYNAMIC API (PRIMARY)
+    @PostMapping("/api/billing/revenue")
+    RevenueResponseDto getRevenue(RevenueRequestDto request);
 
-    @GetMapping("/api/billing/revenue/by-merchant")
-    String getRevenueByMerchant(@RequestParam Long merchantId);
+    // 🔥 TOP PERFORMERS
+    @GetMapping("/api/billing/top-merchants")
+    List<TopMerchantRawDto> getTopMerchants(@RequestParam int limit);
 
-    @GetMapping("/api/billing/revenue/by-retailer")
-    String getRevenueByRetailer(@RequestParam Long retailerId);
-
+    // ⚡ OPTIONAL (keep only if needed)
     @GetMapping("/api/billing/today-sales")
     String getTodaySales(@RequestParam Long retailerId);
+
+    @GetMapping("/api/billing/admin/summary")
+    AdminRevenueSummaryDto getAdminSummary();
 }

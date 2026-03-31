@@ -28,7 +28,7 @@ public class SimpleTemplateService implements TemplateService {
                     "Hello {{name}}, you just logged in.";
 
             case ORDER_CREATED ->
-                    "Your order {{orderId}} has been placed successfully. Amount: ₹{{amount}}";
+                    "Your order with id: {{orderId}} has been placed successfully. Amount: ₹{{amount}}";
 
             case ORDER_CANCELLED ->
                     "Your order {{orderId}} has been cancelled.";

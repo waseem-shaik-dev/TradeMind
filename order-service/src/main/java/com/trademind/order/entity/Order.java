@@ -49,6 +49,9 @@ public class Order {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "user_email")
+    private String userEmail;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "buyer_type", nullable = false)
     private BuyerType buyerType;

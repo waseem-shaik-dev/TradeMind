@@ -31,27 +31,34 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void processEvent(NotificationEvent event) {
 
+        if(notificationRepository.existsByEventId(event.eventId())){
+            log.warn("Duplicate notification event ignored: {}", event.eventId());
+            return;
+        }
+
         try {
             // 🔹 Build subject
             String subject = resolveSubject(event);
 
             // 🔹 Render template
             String body = templateService.render(
-                    event.getType(),
-                    event.getData()
+                    event.type(),
+                    event.data()
             );
 
             // 🔹 Create entity
             Notification notification = Notification.builder()
-                    .recipient(event.getRecipient())
+                    .eventId(event.eventId())
+                    .recipient(event.recipient())
                     .subject(subject)
                     .body(body)
-                    .type(event.getType())
+                    .type(event.type())
                     .status(NotificationStatus.PENDING)
-                    .metadata(event.getMetadata())
+                    .metadata(event.metadata())
                     .build();
 
             notificationRepository.save(notification);
+
 
             // 🔥 Send immediately
             sendNotification(notification);
@@ -119,12 +126,12 @@ public class NotificationServiceImpl implements NotificationService {
     // =========================================================
     private String resolveSubject(NotificationEvent event) {
 
-        if (event.getSubject() != null && !event.getSubject().isBlank()) {
-            return event.getSubject();
+        if (event.subject() != null && !event.subject().isBlank()) {
+            return event.subject();
         }
 
         // Default subject based on type
-        return switch (event.getType()) {
+        return switch (event.type()) {
             case USER_REGISTERED -> "Welcome to TradeMind 🎉";
             case USER_LOGIN -> "Login Alert";
             case ORDER_CREATED -> "Order Confirmation";

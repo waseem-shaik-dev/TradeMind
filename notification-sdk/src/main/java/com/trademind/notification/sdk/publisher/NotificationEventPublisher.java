@@ -20,11 +20,11 @@ public class NotificationEventPublisher {
         try {
             kafkaTemplate.send(
                     TOPIC,
-                    event.getType().name(),
+                    event.type().name(),
                     event
             );
 
-            log.info("Notification event published: {}", event.getType());
+            log.info("Notification event published: {}", event.type());
 
         } catch (Exception ex) {
             log.error("Failed to publish notification event", ex);

@@ -14,6 +14,7 @@ public record OrderCreationRequestedEvent(
         Long checkoutId,
         Long cartId,
         Long userId,
+        String userEmail,
         String buyerType,
 
         // --- Merchant / Source ---

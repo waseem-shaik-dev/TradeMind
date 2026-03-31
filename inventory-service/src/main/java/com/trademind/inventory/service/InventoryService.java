@@ -32,11 +32,12 @@ public interface InventoryService {
 
     List<CatalogueInventoryResponse> getInventoryForCatalogue(OwnerType ownerType);
 
-    CatalogueInventoryResponse getInventoryByProductId(Long productId);
+    CatalogueInventoryResponse getInventoryByProductId(Long productId,
+                                                       Long sellerId);
 
     Integer getAvailableQuantity(Long productId, Long sellerId, String sellerRole);
 
-    boolean hasSufficientStock(Long productId, Integer requestedQty);
+    boolean hasSufficientStock(Long productId,Long sourceId, Integer requestedQty);
 
     List<InventoryAvailabilityResponse> getAvailabilityForProducts(
             Long sellerId,
@@ -44,7 +45,8 @@ public interface InventoryService {
     );
 
 
-    void reserveStock(Long checkoutId, List<ItemQuantityDto> items);
+    void reserveStock(Long checkoutId,Long sourceId,
+                      String sourceRole, List<ItemQuantityDto> items);
 
     // Payment service
     void finalizeReservedStock(Long checkoutId);

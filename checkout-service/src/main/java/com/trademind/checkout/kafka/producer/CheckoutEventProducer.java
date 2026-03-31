@@ -38,6 +38,8 @@ public class CheckoutEventProducer {
                         metadata("INVENTORY_RESERVE_REQUESTED"),
                         session.getId(),
                         session.getUserId(),
+                        session.getSourceId(),
+                        session.getSourceType().name(),
                         mapItems(session.getItems())
                 );
 
@@ -56,6 +58,8 @@ public class CheckoutEventProducer {
                 new InventoryReleaseRequestedEvent(
                         metadata("INVENTORY_RELEASE_REQUESTED"),
                         session.getId(),
+                        session.getSourceId(),
+                        session.getSourceType().name(),
                         mapItems(session.getItems()),
                         reason
                 );
@@ -115,6 +119,7 @@ public class CheckoutEventProducer {
                         session.getId(),
                         session.getCartId(),
                         session.getUserId(),
+                        session.getUserEmail(),
                         session.getBuyerType().name(),
 
                         session.getSourceId(),
@@ -138,6 +143,8 @@ public class CheckoutEventProducer {
 
                         LocalDateTime.now()
                 );
+
+        System.out.println("\n\n\ninside checkout producer for order created request topic which is consumed by payment service with event:   "+event+"\n\n\n");
 
         kafkaTemplate.send(
                 ORDER_CREATE_TOPIC,

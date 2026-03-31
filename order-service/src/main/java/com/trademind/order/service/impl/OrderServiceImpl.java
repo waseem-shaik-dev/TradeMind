@@ -1,5 +1,7 @@
 package com.trademind.order.service.impl;
 
+import com.trademind.events.notification.enums.NotificationType;
+import com.trademind.notification.sdk.annotation.Notify;
 import com.trademind.order.dto.request.*;
 import com.trademind.order.dto.response.*;
 import com.trademind.order.dto.view.*;
@@ -376,5 +378,16 @@ public class OrderServiceImpl implements OrderService {
                         OrderActor.ADMIN
                 ));
 
+    }
+
+    @Notify(
+            type = NotificationType.ORDER_CREATED,
+            recipientExpression = "#order.userEmail",
+            dataExpression = "{'orderId': #order.id, 'amount': #order.grandTotal}"
+    )
+    public Order saveOrderWithNotification(Order order) {
+
+
+        return orderRepository.save(order);
     }
 }

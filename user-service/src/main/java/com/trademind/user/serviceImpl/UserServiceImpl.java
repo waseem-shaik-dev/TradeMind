@@ -1,5 +1,7 @@
 package com.trademind.user.serviceImpl;
 
+import com.trademind.user.dto.UserCountResponse;
+import com.trademind.user.dto.UserGrowthResponse;
 import com.trademind.user.dto.UserProfileDto;
 import com.trademind.user.dto.UserResponseDto;
 import com.trademind.user.dto.internal.CartSourceInfoResponse;
@@ -18,6 +20,11 @@ import com.trademind.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -98,4 +105,6 @@ public class UserServiceImpl implements UserService {
             default -> throw new RuntimeException("Unsupported source type");
         };
     }
+
+
 }

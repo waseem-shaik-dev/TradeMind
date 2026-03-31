@@ -46,6 +46,8 @@ public class NotificationAspect {
             // 🔥 Notification logic must never break main flow
             try {
 
+                log.info("🔥 Notification Aspect Triggered for {}", notify.type());
+
                 if (!notify.enabled()) {
                     return result;
                 }

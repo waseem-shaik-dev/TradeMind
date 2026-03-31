@@ -4,6 +4,7 @@ import com.trademind.events.notification.NotificationEvent;
 import com.trademind.events.notification.enums.NotificationType;
 
 import java.util.Map;
+import java.util.UUID;
 
 public class NotificationEventBuilder {
 
@@ -15,12 +16,14 @@ public class NotificationEventBuilder {
             Map<String, Object> data
     ) {
 
-        return NotificationEvent.builder()
-                .type(type)
-                .recipient(recipient)
-                .template(template)
-                .subject(subject)
-                .data(data)
-                .build();
+        return new NotificationEvent(
+                UUID.randomUUID(),
+                type,
+                recipient,
+                template,
+                data,
+                subject,
+                Map.of()
+        );
     }
 }

@@ -10,6 +10,8 @@ import com.trademind.auth.security.JwtService;
 import com.trademind.auth.service.AuthService;
 import com.trademind.auth.service.RefreshTokenService;
 import com.trademind.events.audit.enums.*;
+import com.trademind.events.notification.enums.NotificationType;
+import com.trademind.notification.sdk.annotation.Notify;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -41,6 +43,11 @@ public class AuthServiceImpl implements AuthService {
             entityIdExpression = "#result.userId",
             captureAfter = true
     )
+    @Notify(
+            type = NotificationType.USER_REGISTERED,
+            recipientExpression = "#result.userEmail",
+            dataExpression = "{'name': #req.username}"
+    )
     @Override
     public RegisterResponse register(RegisterRequest req, String requesterRole) {
 
@@ -68,7 +75,8 @@ public class AuthServiceImpl implements AuthService {
 
         return new RegisterResponse(
                 user.getId(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.getEmail()
         );
     }
 
@@ -107,7 +115,8 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(
                 user.getId(),
                 user.getRole().name(),
-                accessToken
+                accessToken,
+                user.getEmail()
         );
     }
 

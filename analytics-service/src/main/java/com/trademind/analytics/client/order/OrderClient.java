@@ -1,9 +1,11 @@
 package com.trademind.analytics.client.order;
 
+import com.trademind.analytics.client.order.dto.OrderCountResponse;
 import com.trademind.analytics.client.order.dto.OrderSummaryResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @FeignClient(
@@ -14,17 +16,51 @@ import java.util.List;
 public interface OrderClient {
 
     @GetMapping("/api/orders/count")
-    long getTotalOrders();
+    OrderCountResponse getTotalOrders();
 
     @GetMapping("/api/orders/count/by-merchant")
-    long getOrdersByMerchant(@RequestParam Long merchantId);
+    OrderCountResponse getOrdersByMerchant(@RequestParam Long merchantId);
 
     @GetMapping("/api/orders/count/by-retailer")
-    long getOrdersByRetailer(@RequestParam Long retailerId);
+    OrderCountResponse getOrdersByRetailer(@RequestParam Long retailerId);
 
     @GetMapping("/api/orders/recent")
     List<OrderSummaryResponse> getRecentOrders(@RequestParam Long userId);
 
     @GetMapping("/api/orders/active")
-    long getActiveOrders(@RequestParam Long customerId);
+    Long getActiveOrders(@RequestParam Long customerId);
+
+    @GetMapping("/api/orders/count/by-customer")
+    OrderCountResponse getOrdersByCustomer(@RequestParam Long customerId);
+
+    @GetMapping("/api/orders/revenue/by-customer")
+    String getRevenueByCustomer(@RequestParam Long customerId);
+
+    @GetMapping("/api/orders/count/range")
+    OrderCountResponse getOrdersBetween(
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end
+    );
+
+    @GetMapping("/api/orders/count/by-merchant/range")
+    OrderCountResponse getMerchantOrdersBetween(
+            @RequestParam Long merchantId,
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end
+    );
+
+    @GetMapping("/api/orders/count/by-retailer/range")
+    OrderCountResponse getRetailerOrdersBetween(
+            @RequestParam Long RetailerId,
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end
+    );
+
+    @GetMapping("/api/orders/count/by-customer/range")
+    OrderCountResponse getCustomerOrdersBetween(
+            @RequestParam Long customerId,
+            @RequestParam LocalDateTime start,
+            @RequestParam LocalDateTime end
+    );
+
 }

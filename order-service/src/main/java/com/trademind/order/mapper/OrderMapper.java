@@ -34,6 +34,7 @@ public class OrderMapper {
                 .checkoutId(event.checkoutId())
                 .cartId(event.cartId())
                 .userId(event.userId())
+                .userEmail(event.userEmail())
                 .buyerType(BuyerType.valueOf(event.buyerType()))
                 .sourceId(event.sourceId())
                 .sourceType(SourceType.valueOf(event.sourceType()))

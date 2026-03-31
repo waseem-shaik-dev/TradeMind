@@ -4,6 +4,7 @@ public enum PaymentMethod {
 
     COD,
     STRIPE,
-    RAZORPAY
+    RAZORPAY,
+    ONLINE
 
 }

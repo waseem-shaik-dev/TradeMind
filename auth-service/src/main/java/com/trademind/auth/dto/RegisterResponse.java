@@ -4,5 +4,6 @@ import com.trademind.auth.enums.Role;
 
 public record RegisterResponse(
         Long userId,
-        String role
+        String role,
+        String userEmail
 ) {}

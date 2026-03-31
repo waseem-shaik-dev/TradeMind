@@ -112,6 +112,12 @@
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.trademind</groupId>
+			<artifactId>trademind-notification-sdk</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+
 
 	</dependencies>
 

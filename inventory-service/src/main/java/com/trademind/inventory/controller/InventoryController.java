@@ -70,10 +70,11 @@ public class InventoryController {
         return inventoryService.getInventoryForCatalogue(ownerType);
     }
 
-    @GetMapping("/catalogue/{productId}")
+    @GetMapping("/catalogue/seller/{sellerId}/product/{productId}")
     public CatalogueInventoryResponse getCatalogueInventoryByProduct(
+            @PathVariable Long sellerId,
             @PathVariable Long productId) {
-        return inventoryService.getInventoryByProductId(productId);
+        return inventoryService.getInventoryByProductId(productId,sellerId);
     }
 
     // INTERNAL – Cart validation
@@ -85,11 +86,12 @@ public class InventoryController {
         return inventoryService.getAvailableQuantity(productId,sellerId,sellerRole);
     }
 
-    @GetMapping("/internal/{productId}/validate")
+    @GetMapping("/internal/product/{productId}/seller/{sellerId}/validate")
     public boolean validateStock(
+            @PathVariable Long sellerId,
             @PathVariable Long productId,
             @RequestParam Integer quantity) {
-        return inventoryService.hasSufficientStock(productId, quantity);
+        return inventoryService.hasSufficientStock(productId,sellerId, quantity);
     }
 
     // INTERNAL – Batch inventory fetch for cart

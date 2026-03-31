@@ -13,10 +13,10 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "audit_logs", indexes = {
-        @Index(name = "idx_audit_user_id", columnList = "userId"),
         @Index(name = "idx_audit_entity_id", columnList = "entityId"),
         @Index(name = "idx_audit_timestamp", columnList = "timestamp"),
-        @Index(name = "idx_audit_action", columnList = "action")
+        @Index(name = "idx_audit_action", columnList = "action"),
+        @Index(name = "idx_audit_service", columnList = "service_name")
 })
 @Getter
 @Setter
@@ -26,8 +26,11 @@ import java.util.UUID;
 public class AuditLog {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false, unique = true)
+    private UUID eventId;
 
     @Column(nullable = false, updatable = false)
     private Instant timestamp;
@@ -46,11 +49,9 @@ public class AuditLog {
     @Column(nullable = false)
     private String entityId;
 
-    private String userId;
-
-    private String userRole;
-
-    private String ipAddress;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private Map<String, Object> actor;
 
     @Enumerated(EnumType.STRING)
     private AuditStatus status;

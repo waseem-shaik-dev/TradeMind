@@ -4,10 +4,12 @@ import com.trademind.inventory.service.InventoryService;
 import com.trademind.events.checkout.InventoryReserveRequestedEvent;
 import com.trademind.events.checkout.InventoryReleaseRequestedEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class InventoryCheckoutEventConsumer {
@@ -18,19 +20,30 @@ public class InventoryCheckoutEventConsumer {
     // Reserve inventory when checkout is confirmed
     // ---------------------------------------------------------
 
-    @KafkaListener(
-            topics = "inventory.reserve.requested",
-            groupId = "inventory-service"
-    )
+    @KafkaListener(topics = "inventory.reserve.requested", groupId = "inventory-service")
     public void handleInventoryReserve(
             InventoryReserveRequestedEvent event,
             Acknowledgment acknowledgment
     ) {
-        inventoryService.reserveStock(
-                event.checkoutId(),
-                event.items()
-        );
-        acknowledgment.acknowledge();
+        try {
+            log.info("📥 Received event: {}", event);
+
+            inventoryService.reserveStock(
+                    event.checkoutId(),
+                    event.sourceId(),
+                    event.sourceRole(),
+                    event.items()
+            );
+
+            acknowledgment.acknowledge();
+
+        } catch (Exception e) {
+            log.error("❌ Error in inventory reserve", e);
+
+            // VERY IMPORTANT:
+            // either acknowledge to skip bad message
+            acknowledgment.acknowledge();
+        }
     }
 
     // ---------------------------------------------------------

@@ -1,13 +1,12 @@
 package com.trademind.user.controller;
 
-import com.trademind.user.dto.MerchantProfileDto;
-import com.trademind.user.dto.RetailerProfileDto;
-import com.trademind.user.dto.UserResponseDto;
+import com.trademind.user.dto.*;
 import com.trademind.user.enums.UserRole;
 import com.trademind.user.enums.UserStatus;
 import com.trademind.user.service.AdminUserService;
 import com.trademind.user.service.MerchantProfileService;
 import com.trademind.user.service.RetailerProfileService;
+import com.trademind.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +20,7 @@ public class AdminUserController {
     private final AdminUserService adminUserService;
     private final MerchantProfileService merchantProfileService;
     private final RetailerProfileService retailerProfileService;
+    private final UserService userService;
 
     /* =========================
        USER LISTING APIs
@@ -95,4 +95,5 @@ public class AdminUserController {
             throw new RuntimeException("Access denied: ADMIN role required");
         }
     }
+
 }

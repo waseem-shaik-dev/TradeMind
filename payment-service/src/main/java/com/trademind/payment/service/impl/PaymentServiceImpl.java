@@ -46,6 +46,8 @@ public class PaymentServiceImpl implements PaymentService {
             return; // idempotent
         }
 
+        System.out.println("\n\n inside create payment with event: "+event+"\n\n\n");
+
         PaymentTransaction payment =
                 PaymentTransaction.builder()
                         .checkoutId(event.checkoutId())
@@ -68,6 +70,8 @@ public class PaymentServiceImpl implements PaymentService {
                                         : PaymentStatus.CREATED
                         )
                         .build();
+
+        System.out.println("\n\n\n payment transaction obj saving , payment method: "+payment.getPaymentMethod());
 
         paymentRepo.save(payment);
 
@@ -93,6 +97,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (!payment.getUserId().equals(userId)) {
             throw new IllegalStateException("Unauthorized payment access");
         }
+
+        System.out.println("\n\n\n payment object inside initiate stripe payment with payment method: "+payment.getPaymentMethod()+"\n\n\n");
 
         if (payment.getPaymentMethod() != PaymentMethod.ONLINE) {
             throw new IllegalStateException("Not an online payment");

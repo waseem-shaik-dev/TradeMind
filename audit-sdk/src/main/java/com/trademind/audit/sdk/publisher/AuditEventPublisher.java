@@ -1,5 +1,6 @@
 package com.trademind.audit.sdk.publisher;
 
+
 import com.trademind.events.audit.AuditEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,7 @@ public class AuditEventPublisher {
 
     public void publish(AuditEvent event) {
         try {
-            kafkaTemplate.send(TOPIC, event.getEventId().toString(), event);
+            kafkaTemplate.send(TOPIC, event.eventId().toString(), event);
         } catch (Exception ex) {
           //  log.error("Failed to publish audit event", ex);
             // ❗ Do NOT break business flow

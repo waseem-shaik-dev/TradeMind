@@ -3,6 +3,7 @@ package com.trademind.order.service;
 import com.trademind.order.dto.request.*;
 import com.trademind.order.dto.response.*;
 import com.trademind.order.dto.view.*;
+import com.trademind.order.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -71,4 +72,6 @@ public interface OrderService {
 
 
     OrderDetailResponseDto getDetailedOrderById(Long orderId);
+
+    public Order saveOrderWithNotification(Order order);
 }

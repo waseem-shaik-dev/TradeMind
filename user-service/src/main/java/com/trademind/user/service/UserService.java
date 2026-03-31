@@ -1,5 +1,7 @@
 package com.trademind.user.service;
 
+import com.trademind.user.dto.UserCountResponse;
+import com.trademind.user.dto.UserGrowthResponse;
 import com.trademind.user.dto.UserResponseDto;
 import com.trademind.user.dto.UserProfileDto;
 import com.trademind.user.dto.internal.CartSourceInfoResponse;
@@ -13,5 +15,6 @@ public interface UserService {
     UserResponseDto getUserById(Long userId);
 
     CartSourceInfoResponse getCartSourceInfo(Long sourceId, String sourceType);
+
 
 }

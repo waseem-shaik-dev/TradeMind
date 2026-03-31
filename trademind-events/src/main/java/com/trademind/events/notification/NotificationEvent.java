@@ -1,32 +1,29 @@
 package com.trademind.events.notification;
 
 import com.trademind.events.notification.enums.NotificationType;
-import lombok.*;
+
 
 import java.util.Map;
+import java.util.UUID;
 
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class NotificationEvent {
+public record NotificationEvent (
+        UUID eventId,
+        // 🔹 Event type
+         NotificationType type,
 
-    // 🔹 Event type
-    private NotificationType type;
+        // 🔹 Recipient email
+         String recipient,
 
-    // 🔹 Recipient email
-    private String recipient;
+        // 🔹 Template override (optional)
+         String template,
 
-    // 🔹 Template override (optional)
-    private String template;
+        // 🔹 Dynamic data
+         Map<String, Object> data,
 
-    // 🔹 Dynamic data
-    private Map<String, Object> data;
+        // 🔹 Subject override
+         String subject,
 
-    // 🔹 Subject override
-    private String subject;
-
-    // 🔹 Metadata (tracking/debugging)
-    private Map<String, Object> metadata;
-}
+        // 🔹 Metadata (tracking/debugging)
+         Map<String, Object> metadata
+)
+{}

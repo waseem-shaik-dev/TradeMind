@@ -5,5 +5,8 @@ import jakarta.validation.constraints.NotNull;
 public record CreateCheckoutRequestDto(
 
         @NotNull
-        Long cartId
+        Long cartId,
+
+        @NotNull
+        String userEmail
 ) {}

@@ -27,14 +27,14 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     public void processAuditEvent(AuditEvent event) {
 
-        if (event == null || event.getEventId() == null) {
+        if (event == null || event.eventId() == null) {
             log.warn("Invalid audit event received");
             return;
         }
 
         // ✅ Idempotency check (avoid duplicate logs)
-        if (auditLogRepository.existsById(event.getEventId())) {
-            log.warn("Duplicate audit event ignored: {}", event.getEventId());
+        if (auditLogRepository.existsByEventId(event.eventId())) {
+            log.warn("Duplicate audit event ignored: {}", event.eventId());
             return;
         }
 
@@ -43,10 +43,10 @@ public class AuditLogServiceImpl implements AuditLogService {
 
             auditLogRepository.save(auditLog);
 
-            log.info("Audit log saved successfully: {}", event.getEventId());
+            log.info("Audit log saved successfully: {}", event.eventId());
 
         } catch (Exception ex) {
-            log.error("Error saving audit log: {}", event.getEventId(), ex);
+            log.error("Error saving audit log: {}", event.eventId(), ex);
             throw ex; // Important for retry/DLQ
         }
     }
@@ -76,19 +76,17 @@ public class AuditLogServiceImpl implements AuditLogService {
 
     private AuditLog mapToEntity(AuditEvent event) {
         return AuditLog.builder()
-                .id(event.getEventId()) // 🔥 critical for idempotency
-                .timestamp(event.getTimestamp())
-                .serviceName(event.getServiceName())
-                .action(event.getAction())
-                .entityType(event.getEntityType())
-                .entityId(event.getEntityId())
-                .userId(event.getUserId())
-                .userRole(event.getUserRole())
-                .ipAddress(event.getIpAddress())
-                .status(event.getStatus())
-                .beforeState(event.getBeforeState())
-                .afterState(event.getAfterState())
-                .metadata(event.getMetadata())
+                .eventId(event.eventId()) // 🔥 critical for idempotency
+                .timestamp(event.timestamp())
+                .serviceName(event.serviceName())
+                .action(event.action())
+                .entityType(event.entityType())
+                .entityId(event.entityId())
+                .actor(event.actor())
+                .status(event.status())
+                .beforeState(event.beforeState())
+                .afterState(event.afterState())
+                .metadata(event.metadata())
                 .build();
     }
 
@@ -100,8 +98,7 @@ public class AuditLogServiceImpl implements AuditLogService {
                 .action(entity.getAction())
                 .entityType(entity.getEntityType())
                 .entityId(entity.getEntityId())
-                .userId(entity.getUserId())
-                .userRole(entity.getUserRole())
+                .actor(entity.getActor())
                 .status(entity.getStatus())
                 .beforeState(entity.getBeforeState())
                 .afterState(entity.getAfterState())

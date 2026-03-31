@@ -23,8 +23,7 @@ public class AuditLogResponseDto {
     private EntityType entityType;
     private String entityId;
 
-    private String userId;
-    private String userRole;
+    private Map<String, Object> actor;
 
     private AuditStatus status;
 

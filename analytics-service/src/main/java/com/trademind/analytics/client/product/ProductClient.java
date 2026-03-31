@@ -14,9 +14,5 @@ public interface ProductClient {
     @GetMapping("/api/products/count")
     long getTotalProducts();
 
-    @GetMapping("/api/products/count/by-merchant")
-    long getProductsByMerchant(@RequestParam Long merchantId);
 
-    @GetMapping("/api/products/count/by-retailer")
-    long getProductsByRetailer(@RequestParam Long retailerId);
 }

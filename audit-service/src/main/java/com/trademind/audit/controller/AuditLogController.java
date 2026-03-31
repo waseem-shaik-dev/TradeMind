@@ -32,7 +32,7 @@ public class AuditLogController {
             @RequestParam(defaultValue = "10") int size
     ) {
         AuditLogSearchRequestDto request = AuditLogSearchRequestDto.builder()
-                .entityType(Enum.valueOf(com.trademind.audit.enums.EntityType.class, entityType))
+                .entityType(Enum.valueOf(com.trademind.events.audit.enums.EntityType.class, entityType))
                 .entityId(entityId)
                 .page(page)
                 .size(size)

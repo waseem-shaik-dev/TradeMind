@@ -11,5 +11,5 @@ public class TopPerformerDto {
     private int rank;
     private String name;
     private String subtitle;   // "245 orders"
-    private String value;      // "$45,200"
+    private String value;      // "45,200"
 }

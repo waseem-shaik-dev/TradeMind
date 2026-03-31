@@ -1,5 +1,7 @@
 package com.trademind.order.repository;
 
+import com.trademind.order.dto.response.OrderCountResponse;
+import com.trademind.order.dto.response.RecentOrderDto;
 import com.trademind.order.dto.view.OrderFullViewDto;
 import com.trademind.order.entity.Order;
 import com.trademind.order.enums.BuyerType;
@@ -9,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -116,6 +119,179 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             BuyerType buyerType,
             Pageable pageable
     );
+
+
+    // ================= GLOBAL COUNT =================
+    @Query("""
+        SELECT new com.trademind.order.dto.response.OrderCountResponse(
+            COUNT(o),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+        )
+        FROM Order o
+    """)
+    OrderCountResponse getGlobalOrderStats();
+
+
+    // ================= BY MERCHANT =================
+    @Query("""
+        SELECT new com.trademind.order.dto.response.OrderCountResponse(
+            COUNT(o),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+        )
+        FROM Order o
+        WHERE o.sourceId = :merchantId
+    """)
+    OrderCountResponse getMerchantOrderStats(@Param("merchantId") Long merchantId);
+
+
+    // ================= BY RETAILER =================
+    @Query("""
+        SELECT new com.trademind.order.dto.response.OrderCountResponse(
+            COUNT(o),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+        )
+        FROM Order o
+        WHERE o.sourceId = :retailerId
+    """)
+    OrderCountResponse getRetailerOrderStats(@Param("retailerId") Long retailerId);
+
+
+    // ================= BY CUSTOMER =================
+    @Query("""
+          SELECT new com.trademind.order.dto.response.OrderCountResponse(
+            COUNT(o),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+            COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+        )
+        FROM Order o
+        WHERE o.userId = :customerId
+    """)
+    OrderCountResponse getCustomerOrderStats(@Param("customerId") Long customerId);
+
+
+    // ================= ACTIVE ORDERS =================
+    @Query("""
+        SELECT COUNT(o)
+        FROM Order o
+        WHERE o.userId = :customerId
+        AND o.orderStatus IN ('PENDING', 'CONFIRMED', 'SHIPPED')
+    """)
+    long getActiveOrders(@Param("customerId") Long customerId);
+
+
+    // ================= REVENUE =================
+    @Query("""
+        SELECT COALESCE(SUM(o.grandTotal), 0)
+        FROM Order o
+    """)
+    java.math.BigDecimal getTotalRevenue();
+
+
+    @Query("""
+        SELECT COALESCE(SUM(o.grandTotal), 0)
+        FROM Order o
+        WHERE o.sourceId = :merchantId
+    """)
+    java.math.BigDecimal getRevenueByMerchant(@Param("merchantId") Long merchantId);
+
+
+    @Query("""
+        SELECT COALESCE(SUM(o.grandTotal), 0)
+        FROM Order o
+        WHERE o.userId = :retailerId
+    """)
+    java.math.BigDecimal getRevenueByRetailer(@Param("retailerId") Long retailerId);
+
+
+    @Query("""
+        SELECT COALESCE(SUM(o.grandTotal), 0)
+        FROM Order o
+        WHERE o.userId = :customerId
+    """)
+    java.math.BigDecimal getRevenueByCustomer(@Param("customerId") Long customerId);
+
+
+    // ================= RECENT ORDERS =================
+    @Query("""
+        SELECT new com.trademind.order.dto.response.RecentOrderDto(
+            o.orderNumber,
+            o.userId,
+            CAST(o.grandTotal as string),
+            CAST(o.orderStatus as string),
+            CAST(o.createdAt as string)
+        )
+        FROM Order o
+        WHERE o.userId = :userId
+        ORDER BY o.createdAt DESC
+    """)
+    List<RecentOrderDto> getRecentOrders(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+    SELECT new com.trademind.order.dto.response.OrderCountResponse(
+        COUNT(o),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+    )
+    FROM Order o
+    WHERE o.createdAt BETWEEN :start AND :end
+""")
+    OrderCountResponse getOrderStatsBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+    SELECT new com.trademind.order.dto.response.OrderCountResponse(
+        COUNT(o),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+    )
+    FROM Order o
+    WHERE o.sourceId = :merchantId
+    AND o.createdAt BETWEEN :start AND :end
+""")
+    OrderCountResponse getMerchantOrdersBetween(
+            @Param("merchantId") Long merchantId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+    SELECT new com.trademind.order.dto.response.OrderCountResponse(
+        COUNT(o),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+    )
+    FROM Order o
+    WHERE o.sourceId = :retailerId
+    AND o.createdAt BETWEEN :start AND :end
+""")
+    OrderCountResponse getRetailerOrdersBetween(
+            @Param("retailerId") Long retailerId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+    SELECT new com.trademind.order.dto.response.OrderCountResponse(
+        COUNT(o),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
+        COALESCE(SUM(CASE WHEN o.orderStatus = 'DELIVERED' THEN 1 ELSE 0 END), 0)
+    )
+    FROM Order o
+    WHERE o.userId = :customerId
+    AND o.createdAt BETWEEN :start AND :end
+""")
+    OrderCountResponse getCustomerOrdersBetween(
+            @Param("customerId") Long customerId,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+
 
 
 

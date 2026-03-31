@@ -9,6 +9,7 @@ import com.trademind.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,66 +26,71 @@ public class OrderPaymentUpdatedConsumer {
             groupId = "order-service-group"
     )
     @Transactional
-    public void handlePaymentUpdate(OrderPaymentUpdatedEvent event) {
+    public void handlePaymentUpdate(OrderPaymentUpdatedEvent event, Acknowledgment ack) {
+        try {
+            log.info("Received OrderPaymentUpdatedEvent for checkoutId={}",
+                    event.checkoutId());
 
-        log.info("Received OrderPaymentUpdatedEvent for checkoutId={}",
-                event.checkoutId());
+            Order order = orderRepository.findByCheckoutId(event.checkoutId())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Order not found for checkoutId=" + event.checkoutId()
+                    ));
 
-        Order order = orderRepository.findByCheckoutId(event.checkoutId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Order not found for checkoutId=" + event.checkoutId()
-                ));
+            // Event module enum
+            com.trademind.events.order.PaymentStatus eventStatus =
+                    event.paymentStatus();
 
-        // Event module enum
-        com.trademind.events.order.PaymentStatus eventStatus =
-                event.paymentStatus();
+            // Convert event enum → order enum
+            com.trademind.order.enums.PaymentStatus orderPaymentStatus =
+                    com.trademind.order.enums.PaymentStatus.valueOf(
+                            eventStatus.name()
+                    );
 
-        // Convert event enum → order enum
-        com.trademind.order.enums.PaymentStatus orderPaymentStatus =
-                com.trademind.order.enums.PaymentStatus.valueOf(
-                        eventStatus.name()
-                );
+            switch (eventStatus) {
 
-        switch (eventStatus) {
+                case PAID -> {
 
-            case PAID -> {
+                    if (order.getPaymentStatus() ==
+                            com.trademind.order.enums.PaymentStatus.PAID) {
+                        return; // idempotent
+                    }
 
-                if (order.getPaymentStatus() ==
-                        com.trademind.order.enums.PaymentStatus.PAID) {
-                    return; // idempotent
+                    order.setPaymentStatus(PaymentStatus.PAID);
+                    order.setOrderStatus(OrderStatus.AWAITING_ACCEPTANCE);
+
+                    //  TRIGGER BILLING
+                    billingEventProducer.publishBillingEvent(order);
+
+                    log.info("Order {} marked as CONFIRMED (payment successful)",
+                            order.getId());
                 }
 
-                order.setPaymentStatus(PaymentStatus.PAID);
-                order.setOrderStatus(OrderStatus.AWAITING_ACCEPTANCE);
+                case FAILED -> {
 
-                //  TRIGGER BILLING
-                billingEventProducer.publishBillingEvent(order);
+                    if (order.getPaymentStatus() ==
+                            com.trademind.order.enums.PaymentStatus.FAILED) {
+                        return;
+                    }
 
-                log.info("Order {} marked as CONFIRMED (payment successful)",
-                        order.getId());
-            }
+                    order.setPaymentStatus(PaymentStatus.FAILED);
+                    order.setOrderStatus(OrderStatus.FAILED);
 
-            case FAILED -> {
-
-                if (order.getPaymentStatus() ==
-                        com.trademind.order.enums.PaymentStatus.FAILED) {
-                    return;
+                    log.info("Order {} marked as FAILED (payment failed)",
+                            order.getId());
                 }
 
-                order.setPaymentStatus(PaymentStatus.FAILED);
-                order.setOrderStatus(OrderStatus.FAILED);
+                case INITIATED, PENDING -> {
+                    order.setPaymentStatus(orderPaymentStatus);
+                }
 
-                log.info("Order {} marked as FAILED (payment failed)",
-                        order.getId());
+//                case PENDING -> {
+//                    order.setPaymentStatus(orderPaymentStatus);
+//                }
             }
-
-            case INITIATED -> {
-                order.setPaymentStatus(orderPaymentStatus);
-            }
-
-            case PENDING -> {
-                order.setPaymentStatus(orderPaymentStatus);
-            }
+            ack.acknowledge();
+        } catch (Exception e) {
+            log.error("Error while updating order payment status inside consumer ",e);
+            ack.acknowledge();
         }
     }
 }

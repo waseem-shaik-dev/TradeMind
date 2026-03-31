@@ -56,6 +56,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         CheckoutSession session = CheckoutSession.builder()
                 .userId(cart.userId())
+                .userEmail(request.userEmail())
                 .cartId(cart.cartId())
                 .buyerType(BuyerType.valueOf(userRole))
                 .sourceId(source.sourceId())
@@ -241,6 +242,7 @@ public class CheckoutServiceImpl implements CheckoutService {
 //        eventProducer.publishCheckoutConfirmedEvent(session);
 //
 
+        System.out.println("printing payment snapshot of checkoutSession "+session.getPaymentSnapshot());
 
         eventProducer.publishOrderCreationRequestedEvent(session);
 

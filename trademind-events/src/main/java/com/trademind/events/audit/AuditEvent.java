@@ -1,36 +1,28 @@
 package com.trademind.events.audit;
 
 import com.trademind.events.audit.enums.*;
-import lombok.*;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AuditEvent {
+public record AuditEvent(
 
-    private UUID eventId;
-    private Instant timestamp;
+        UUID eventId,
+        Instant timestamp,
 
-    private String serviceName;
+        String serviceName,
 
-    private AuditAction action;
-    private EntityType entityType;
-    private String entityId;
+        AuditAction action,
+        EntityType entityType,
+        String entityId,
 
-    private String userId;
-    private String userRole;
-    private String ipAddress;
+        Map<String, Object> actor,
 
-    private AuditStatus status;
+        AuditStatus status,
 
-    private Map<String, Object> beforeState;
-    private Map<String, Object> afterState;
+        Map<String, Object> beforeState,
+        Map<String, Object> afterState,
 
-    private Map<String, Object> metadata;
-}
+        Map<String, Object> metadata
+) {}

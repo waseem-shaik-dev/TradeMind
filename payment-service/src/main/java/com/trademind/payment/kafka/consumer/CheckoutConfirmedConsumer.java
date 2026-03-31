@@ -24,6 +24,8 @@ public class CheckoutConfirmedConsumer {
             Acknowledgment acknowledgment
     ) {
 
+        System.out.println("\n\n\nreceived event after checkout confirm :"+event+"\n\n\n");
+
         paymentService.createPaymentForOrder(event);
 
         acknowledgment.acknowledge();

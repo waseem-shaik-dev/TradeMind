@@ -25,8 +25,11 @@ import java.util.UUID;
 public class Notification {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false,unique = true)
+    private UUID eventId;
 
     // 🔹 Email recipient
     @Column(nullable = false)

@@ -49,9 +49,9 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public CatalogueInventoryResponse getInventoryByProductId(Long productId) {
+    public CatalogueInventoryResponse getInventoryByProductId(Long productId,Long sellerId) {
 
-        Inventory inv = inventoryRepo.findByProductId(productId)
+        Inventory inv = inventoryRepo.findByProductIdAndSellerId(productId,sellerId)
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
 
         return new CatalogueInventoryResponse(
@@ -189,6 +189,8 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public Integer getAvailableQuantity(Long productId, Long sellerId, String sellerRole) {
 
+        System.out.print("checking stock for productId: "+productId+"   sellerId: "+sellerId+"    sellerRole: "+sellerRole);
+
         Inventory inv = inventoryRepo.findByProductIdAndSellerIdAndSellerRole(productId,sellerId,OwnerType.valueOf(sellerRole))
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
 
@@ -196,9 +198,12 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public boolean hasSufficientStock(Long productId, Integer requestedQty) {
+    public boolean hasSufficientStock(Long productId,Long sourceId,Integer requestedQty) {
 
-        Inventory inv = inventoryRepo.findByProductId(productId)
+        Inventory inv = inventoryRepo.findByProductIdAndSellerId(
+                        productId,
+                        sourceId
+                )
                 .orElseThrow(() -> new RuntimeException("Stock not found"));
 
         return inv.getQuantityAvailable() >= requestedQty;
@@ -223,7 +228,8 @@ public class InventoryServiceImpl implements InventoryService {
     // 1️⃣ RESERVE (Checkout.confirm)
     // --------------------------------------------------
     @Override
-    public void reserveStock(Long checkoutId, List<ItemQuantityDto> items) {
+    public void reserveStock(Long checkoutId,Long sourceId,
+                             String sourceRole, List<ItemQuantityDto> items) {
 
         try {
 
@@ -235,7 +241,11 @@ public class InventoryServiceImpl implements InventoryService {
                 }
 
                 Inventory inv = inventoryRepo
-                        .findByProductId(item.productId())
+                        .findByProductIdAndSellerIdAndSellerRole(
+                                item.productId(),
+                                sourceId,
+                                OwnerType.valueOf(sourceRole)
+                        )
                         .orElseThrow(() ->
                                 new IllegalStateException(
                                         "Stock not found for product "
@@ -263,6 +273,8 @@ public class InventoryServiceImpl implements InventoryService {
                 StockReservation r = new StockReservation();
                 r.setCheckoutId(checkoutId);
                 r.setProductId(item.productId());
+                r.setSellerId(sourceId);
+                r.setSellerRole(OwnerType.valueOf(sourceRole));
                 r.setQuantity(item.quantity());
                 r.setStatus(ReservationStatus.RESERVED);
 
@@ -319,7 +331,11 @@ public class InventoryServiceImpl implements InventoryService {
             }
 
             Inventory inv = inventoryRepo
-                    .findByProductId(r.getProductId())
+                    .findByProductIdAndSellerIdAndSellerRole(
+                            r.getProductId(),
+                            r.getSellerId(),
+                            r.getSellerRole()
+                    )
                     .orElseThrow();
 
             inv.setQuantityAvailable(
@@ -349,7 +365,11 @@ public class InventoryServiceImpl implements InventoryService {
             }
 
             Inventory inv = inventoryRepo
-                    .findByProductId(r.getProductId())
+                    .findByProductIdAndSellerIdAndSellerRole(
+                            r.getProductId(),
+                            r.getSellerId(),
+                            r.getSellerRole()
+                    )
                     .orElseThrow();
 
             inv.setQuantityAvailable(

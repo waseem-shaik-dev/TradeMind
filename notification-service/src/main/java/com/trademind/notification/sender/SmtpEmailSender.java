@@ -2,6 +2,7 @@ package com.trademind.notification.sender;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Component;
 public class SmtpEmailSender implements EmailSender {
 
     private final JavaMailSender mailSender;
+    @Value("${spring.mail.from}")
+    private String fromAddress;
 
     @Override
     public void send(String to, String subject, String body) {
@@ -21,6 +24,7 @@ public class SmtpEmailSender implements EmailSender {
             message.setTo(to);
             message.setSubject(subject);
             message.setText(body);
+            message.setFrom(fromAddress);
 
             mailSender.send(message);
 

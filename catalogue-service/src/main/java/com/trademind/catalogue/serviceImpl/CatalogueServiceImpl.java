@@ -102,7 +102,7 @@ public class CatalogueServiceImpl implements CatalogueService {
 
         CatalogueInventoryResponse stock =
                 restClient.get()
-                        .uri(INVENTORY_URL + "/catalogue/{id}", productId)
+                        .uri(INVENTORY_URL + "/catalogue/seller/{sellerId}/product/{id}",1L, productId)
                         .retrieve()
                         .body(CatalogueInventoryResponse.class);
 

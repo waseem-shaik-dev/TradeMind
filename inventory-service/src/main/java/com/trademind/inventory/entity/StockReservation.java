@@ -1,5 +1,6 @@
 package com.trademind.inventory.entity;
 
+import com.trademind.inventory.enums.OwnerType;
 import com.trademind.inventory.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,6 +23,8 @@ public class StockReservation {
 
     private Long checkoutId;
     private Long productId;
+    private Long sellerId;
+    private OwnerType sellerRole;
 
     private Integer quantity;
 

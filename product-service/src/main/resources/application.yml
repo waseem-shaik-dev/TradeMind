@@ -9,6 +9,9 @@ spring:
     url: jdbc:postgresql://localhost:5432/product_db
     username: postgres
     password: 1234
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
 
   jpa:
     hibernate:

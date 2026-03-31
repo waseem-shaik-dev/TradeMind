@@ -23,12 +23,12 @@ public class AuditEventConsumer {
     public void consume(AuditEvent event) {
 
         try {
-            log.info("Received audit event: {}", event.getEventId());
+            log.info("Received audit event: {}", event.eventId());
 
             auditLogService.processAuditEvent(event);
 
         } catch (Exception ex) {
-            log.error("Failed to process audit event: {}", event.getEventId(), ex);
+            log.error("Failed to process audit event: {}", event.eventId(), ex);
 
             // ❗ IMPORTANT:
             // Let exception propagate if using retry/DLQ

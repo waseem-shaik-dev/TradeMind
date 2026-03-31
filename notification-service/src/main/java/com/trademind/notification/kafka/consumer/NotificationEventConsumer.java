@@ -22,7 +22,7 @@ public class NotificationEventConsumer {
     public void consume(NotificationEvent event) {
 
         try {
-            log.info("Received notification event: {}", event.getType());
+            log.info("Received notification event: {}", event.type());
 
             notificationService.processEvent(event);
 
