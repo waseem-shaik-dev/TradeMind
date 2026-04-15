@@ -1,9 +1,6 @@
 package com.trademind.analytics.client.billing;
 
-import com.trademind.analytics.client.billing.dto.AdminRevenueSummaryDto;
-import com.trademind.analytics.client.billing.dto.RevenueRequestDto;
-import com.trademind.analytics.client.billing.dto.RevenueResponseDto;
-import com.trademind.analytics.client.billing.dto.TopMerchantRawDto;
+import com.trademind.analytics.client.billing.dto.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,4 +27,11 @@ public interface BillingClient {
 
     @GetMapping("/api/billing/admin/summary")
     AdminRevenueSummaryDto getAdminSummary();
+
+    @GetMapping("/api/billing/graph/revenue")
+    List<RevenueGraphDto> getRevenueGraph(
+            @RequestParam(required = false) Long sourceId,
+            @RequestParam(required = false) String sourceType,
+            @RequestParam(required = false) Long userId
+    );
 }

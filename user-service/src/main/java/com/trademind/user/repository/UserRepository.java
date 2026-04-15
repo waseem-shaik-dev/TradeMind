@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
@@ -61,4 +62,30 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("""
+    SELECT FUNCTION('DATE', u.createdAt),
+        SUM(CASE WHEN u.role = 'MERCHANT' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN u.role = 'RETAILER' THEN 1 ELSE 0 END),
+        SUM(CASE WHEN u.role = 'CUSTOMER' THEN 1 ELSE 0 END)
+    FROM User u
+    WHERE u.createdAt >= :start
+    GROUP BY FUNCTION('DATE', u.createdAt)
+    ORDER BY FUNCTION('DATE', u.createdAt)
+""")
+    List<Object[]> getUserGraph(@Param("start") LocalDateTime start);
+
+    @Query("""
+        SELECT u FROM User u
+        LEFT JOIN FETCH u.profile p
+        LEFT JOIN FETCH u.addresses a
+        LEFT JOIN FETCH u.adminProfile ap
+        LEFT JOIN FETCH u.customerProfile cp
+        LEFT JOIN FETCH u.merchantProfile mp
+        LEFT JOIN FETCH mp.storeAddress msa
+        LEFT JOIN FETCH u.retailerProfile rp
+        LEFT JOIN FETCH rp.storeAddress rsa
+        WHERE u.id = :userId
+    """)
+    Optional<User> findCompleteUserById(Long userId);
 }

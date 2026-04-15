@@ -6,6 +6,7 @@ import com.trademind.order.dto.request.*;
 import com.trademind.order.dto.response.*;
 import com.trademind.order.dto.view.*;
 import com.trademind.order.entity.Order;
+import com.trademind.order.entity.OrderStatusHistory;
 import com.trademind.order.enums.*;
 import com.trademind.order.feign.InventoryClient;
 import com.trademind.order.kafka.producer.BillingEventProducer;
@@ -13,13 +14,17 @@ import com.trademind.order.kafka.producer.InventoryEventProducer;
 import com.trademind.order.kafka.producer.OrderEventProducer;
 import com.trademind.order.mapper.OrderMapper;
 import com.trademind.order.repository.OrderRepository;
+import com.trademind.order.repository.OrderStatusHistoryRepository;
 import com.trademind.order.service.OrderService;
+import com.trademind.order.service.tracking.OrderTrackingFlowResolver;
 import com.trademind.order.service.validator.OrderStateMachineValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +38,8 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryClient inventoryClient;
     private final InventoryEventProducer inventoryEventProducer;
     private final BillingEventProducer billingEventProducer;
+    private final OrderStatusHistoryRepository historyRepository;
+    private final OrderTrackingFlowResolver flowResolver;
 
 
     // ============================================================
@@ -110,6 +117,7 @@ public class OrderServiceImpl implements OrderService {
             order.setPaymentStatus(PaymentStatus.REFUND_INITIATED);
         }
 
+        saveHistory(order);
 
         orderRepository.save(order);
 
@@ -162,6 +170,7 @@ public class OrderServiceImpl implements OrderService {
             order.setPaymentStatus(PaymentStatus.REFUND_INITIATED);
         }
 
+        saveHistory(order);
 
         orderRepository.save(order);
 
@@ -280,6 +289,7 @@ public class OrderServiceImpl implements OrderService {
 
             case ACCEPT -> {
                 order.setOrderStatus(OrderStatus.ACCEPTED);
+                saveHistory(order);
             }
 
             case REJECT -> {
@@ -288,22 +298,27 @@ public class OrderServiceImpl implements OrderService {
                 if (order.getPaymentStatus() == PaymentStatus.PAID) {
                     order.setPaymentStatus(PaymentStatus.REFUND_INITIATED);
                 }
+                saveHistory(order);
             }
 
             case MARK_PROCESSING -> {
                 order.setOrderStatus(OrderStatus.PROCESSING);
+                saveHistory(order);
             }
 
             case MARK_PACKED -> {
                 order.setOrderStatus(OrderStatus.PACKED);
+                saveHistory(order);
             }
 
             case MARK_OUT_FOR_DELIVERY -> {
                 order.setOrderStatus(OrderStatus.OUT_FOR_DELIVERY);
+                saveHistory(order);
             }
 
             case MARK_DELIVERED -> {
                 order.setOrderStatus(OrderStatus.DELIVERED);
+                saveHistory(order);
             }
 
             default -> throw new IllegalArgumentException("Invalid action");
@@ -356,6 +371,7 @@ public class OrderServiceImpl implements OrderService {
         // 🔥 TRIGGER BILLING
         billingEventProducer.publishBillingEvent(order);
 
+        saveHistory(order);
 
         return orderMapper.toStatusUpdateResponse(
                 order,
@@ -380,14 +396,76 @@ public class OrderServiceImpl implements OrderService {
 
     }
 
-    @Notify(
-            type = NotificationType.ORDER_CREATED,
-            recipientExpression = "#order.userEmail",
-            dataExpression = "{'orderId': #order.id, 'amount': #order.grandTotal}"
-    )
+//    @Notify(
+//            type = NotificationType.ORDER_CREATED,
+//            recipientExpression = "#order.userEmail",
+//            dataExpression = "{'orderId': #order.id, 'amount': #order.grandTotal}"
+//    )
     public Order saveOrderWithNotification(Order order) {
 
 
-        return orderRepository.save(order);
+        Order orderResponse = orderRepository.save(order);
+        saveHistory(orderResponse);
+        return orderResponse;
     }
+
+    private void saveHistory(Order order) {
+        historyRepository.save(
+                OrderStatusHistory.builder()
+                        .orderId(order.getId())
+                        .status(order.getOrderStatus())
+                        .build()
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderTrackingStepDto> getTrackingSteps(
+            Long orderId,
+            Long userId,
+            String role
+    ) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalStateException("Order not found"));
+
+        OrderActor actor = OrderActor.valueOf(role);
+
+        // 🔒 Access control
+        if (actor == OrderActor.CUSTOMER && !order.getUserId().equals(userId)) {
+            throw new IllegalStateException("Unauthorized");
+        }
+
+        if ((actor == OrderActor.MERCHANT || actor == OrderActor.RETAILER)
+                && ( !order.getSourceId().equals(userId)  && actor== OrderActor.MERCHANT )) {
+            throw new IllegalStateException("Unauthorized");
+        }
+
+        List<OrderStatus> flow = flowResolver.resolveFlow(order);
+
+        List<OrderStatusHistory> history =
+                historyRepository.findByOrderIdOrderByCreatedAtAsc(orderId);
+
+        return flow.stream().map(status -> {
+
+            OrderStatusHistory matched = history.stream()
+                    .filter(h -> h.getStatus() == status)
+                    .findFirst()
+                    .orElse(null);
+
+            boolean completed = matched != null;
+            boolean current = status == order.getOrderStatus();
+            boolean upcoming = !completed && !current;
+
+            return new OrderTrackingStepDto(
+                    status,
+                    completed,
+                    current,
+                    upcoming,
+                    matched != null ? matched.getCreatedAt() : null
+            );
+
+        }).toList();
+    }
+
 }

@@ -35,6 +35,27 @@ public class UserMapper {
         );
     }
 
+    // ✅ NEW (BUSINESS VIEW)
+    public UserResponseDto toBusinessDto(User user) {
+        if (user == null) return null;
+
+        return new UserResponseDto(
+                user.getId(),
+                user.getRole(),
+                user.getStatus(),
+                user.getCreatedAt(),
+
+                null, // ❌ no user profile
+                null, // ❌ no addresses
+
+                null, // ❌ admin not needed
+
+                customerProfileMapper.toDto(user.getCustomerProfile()),
+                merchantProfileMapper.toDto(user.getMerchantProfile()),
+                retailerProfileMapper.toDto(user.getRetailerProfile())
+        );
+    }
+
     private List<AddressDto> mapAddresses(User user) {
         if (user.getAddresses() == null) return List.of();
 

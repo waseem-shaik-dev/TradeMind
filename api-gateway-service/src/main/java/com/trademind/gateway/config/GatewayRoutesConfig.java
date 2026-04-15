@@ -37,6 +37,10 @@ public class GatewayRoutesConfig {
                         .path("/api/billing/**")
                         .uri("http://localhost:8085"))
 
+                .route("analytics-service", r -> r
+                        .path("/api/analytics/**")
+                        .uri("http://localhost:8086"))
+
 
                 .route("order-service", r -> r
                         .path("/api/orders/**")
@@ -50,9 +54,6 @@ public class GatewayRoutesConfig {
                         .path("/api/audit-logs/**")
                         .uri("http://localhost:8089"))
 
-                .route("analytics-service", r -> r
-                        .path("/api/analytics/**")
-                        .uri("http://localhost:8090"))
 
                 .route("cart-service",r->r
                         .path("/api/cart/**")

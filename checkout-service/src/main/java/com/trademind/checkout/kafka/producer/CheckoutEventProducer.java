@@ -1,9 +1,12 @@
 package com.trademind.checkout.kafka.producer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trademind.checkout.entity.CheckoutItem;
 import com.trademind.checkout.entity.CheckoutSession;
 import com.trademind.events.checkout.*;
 import com.trademind.events.checkout.common.*;
+import com.trademind.events.common.SellerSnapshotDto;
 import com.trademind.events.order.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -17,6 +20,7 @@ import java.util.UUID;
 public class CheckoutEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     // ---------- Topics ----------
     private static final String INVENTORY_RESERVE_TOPIC = "inventory.reserve.requested";
@@ -112,6 +116,13 @@ public class CheckoutEventProducer {
             CheckoutSession session
     ) {
 
+        if (session.getSellerSnapshot() == null) {
+            throw new IllegalStateException("Seller snapshot missing in checkout");
+        }
+
+            SellerSnapshotDto seller =
+                    parseSeller(session.getSellerSnapshot());
+
         OrderCreationRequestedEvent event =
                 new OrderCreationRequestedEvent(
                         metadata("ORDER_CREATE_REQUESTED"),
@@ -141,6 +152,8 @@ public class CheckoutEventProducer {
 
                         mapOrderItems(session),
 
+                        seller,
+
                         LocalDateTime.now()
                 );
 
@@ -151,6 +164,8 @@ public class CheckoutEventProducer {
                 session.getId().toString(),
                 event
         );
+
+
     }
 
 
@@ -205,5 +220,12 @@ public class CheckoutEventProducer {
         );
     }
 
+    private SellerSnapshotDto parseSeller(String json) {
+        try {
+            return objectMapper.readValue(json, SellerSnapshotDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to parse seller snapshot", e);
+        }
+    }
 
 }

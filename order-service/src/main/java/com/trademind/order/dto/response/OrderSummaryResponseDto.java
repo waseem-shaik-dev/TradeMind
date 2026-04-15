@@ -1,5 +1,6 @@
 package com.trademind.order.dto.response;
 
+import com.trademind.events.common.SellerSnapshotDto;
 import com.trademind.order.enums.OrderStatus;
 import com.trademind.order.enums.PaymentStatus;
 
@@ -20,6 +21,8 @@ public record OrderSummaryResponseDto(
         BigDecimal grandTotal,
         String currency,
 
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+
+        SellerSnapshotDto seller
 
 ) {}

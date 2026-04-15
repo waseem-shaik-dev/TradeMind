@@ -7,6 +7,8 @@ import com.trademind.order.entity.Order;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface OrderService {
 
     // ---------------- CUSTOMER ----------------
@@ -74,4 +76,8 @@ public interface OrderService {
     OrderDetailResponseDto getDetailedOrderById(Long orderId);
 
     public Order saveOrderWithNotification(Order order);
+
+    List<OrderTrackingStepDto> getTrackingSteps(Long orderId,
+                                                Long userId,
+                                                String role);
 }

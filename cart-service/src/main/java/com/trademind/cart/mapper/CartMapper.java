@@ -1,8 +1,10 @@
 package com.trademind.cart.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trademind.cart.client.UserClient;
 import com.trademind.cart.dto.*;
 import com.trademind.cart.entity.Cart;
+import com.trademind.events.common.SellerSnapshotDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -13,26 +15,24 @@ import java.util.List;
 public class CartMapper {
 
     private final UserClient userClient;
+    private final ObjectMapper objectMapper;
 
-    public CartSourceDto mapSource(Cart cart) {
+    // ✅ READ FROM SNAPSHOT (NO FEIGN)
+    public SellerSnapshotDto mapSeller(Cart cart) {
 
-        var source =
-                userClient.getCartSourceInfo(
-                        cart.getSourceId(),
-                        cart.getSourceType().name()
-                );
-
-        return new CartSourceDto(
-                source.sourceId(),
-                source.sourceType(),
-                source.name(),
-                source.logo()
-        );
+        try {
+            return objectMapper.readValue(
+                    cart.getSourceSnapshot(),
+                    SellerSnapshotDto.class
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse seller snapshot", e);
+        }
     }
 
     public CartResponseDto toCartResponse(
             Cart cart,
-            CartSourceDto source,
+            SellerSnapshotDto seller,
             List<CartItemResponseDto> items,
             CartPriceSummaryDto priceSummary,
             CartValidationDto validationDto
@@ -41,7 +41,7 @@ public class CartMapper {
         return new CartResponseDto(
                 cart.getId(),
                 cart.getUserId(),
-                source,
+                seller,
                 cart.getStatus().name(),
                 cart.isActive(),
                 items,
@@ -54,13 +54,13 @@ public class CartMapper {
 
     public CartSummaryResponseDto toSummary(
             Cart cart,
-            CartSourceDto source,
+            SellerSnapshotDto seller,
             CartPriceSummaryDto priceSummary
     ) {
 
         return new CartSummaryResponseDto(
                 cart.getId(),
-                source,
+                seller,
                 priceSummary.totalItems(),
                 priceSummary.totalQuantity(),
                 priceSummary.subTotal(),

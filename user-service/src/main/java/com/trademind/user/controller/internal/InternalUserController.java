@@ -1,10 +1,13 @@
 package com.trademind.user.controller.internal;
 
+import com.trademind.events.common.SellerSnapshotDto;
 import com.trademind.user.dto.AddressDto;
+import com.trademind.user.dto.UserResponseDto;
 import com.trademind.user.dto.internal.CartSourceInfoResponse;
 import com.trademind.user.service.AddressService;
 import com.trademind.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,11 +22,11 @@ public class InternalUserController {
 
     // Used by Cart Service
     @GetMapping("/cart-source")
-    public CartSourceInfoResponse getCartSourceInfo(
+    public SellerSnapshotDto getCartSourceInfo(
             @RequestParam Long sourceId,
             @RequestParam String sourceType) {
 
-        return userService.getCartSourceInfo(sourceId, sourceType);
+        return userService.getSellerSnapshot(sourceId, sourceType);
     }
 
     /**
@@ -45,6 +48,22 @@ public class InternalUserController {
             @PathVariable Long addressId
     ) {
         return addressService.getMyAddressById(userId, addressId);
+    }
+
+    @GetMapping("/{userId}/detailed")
+    public ResponseEntity<UserResponseDto> getFullUser(
+            @PathVariable Long userId
+    ) {
+        UserResponseDto response = userService.getFullUser(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{userId}/business")
+    public ResponseEntity<UserResponseDto> getBusinessUser(
+            @PathVariable Long userId
+    ) {
+        UserResponseDto response = userService.getBusinessUser(userId);
+        return ResponseEntity.ok(response);
     }
 
 }

@@ -7,11 +7,13 @@ import com.trademind.analytics.client.order.dto.OrderCountResponse;
 import com.trademind.analytics.client.user.UserClient;
 import com.trademind.analytics.client.user.dto.UserCountResponse;
 import com.trademind.analytics.dto.admin.AdminDashboardResponse;
+import com.trademind.analytics.dto.admin.UserGraphPointDto;
 import com.trademind.analytics.dto.common.*;
 import com.trademind.analytics.helper.BillingAnalyticsHelper;
 import com.trademind.analytics.helper.OrderAnalyticsHelper;
 import com.trademind.analytics.mapper.AuditMapper;
 import com.trademind.analytics.mapper.TopPerformerMapper;
+import com.trademind.analytics.mapper.UserGraphMapper;
 import com.trademind.analytics.util.ChangeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -43,6 +45,12 @@ public class AdminDashboardAggregator {
         CompletableFuture<OrderCountResponse> ordersFuture = CompletableFuture.supplyAsync(
                 orderClient::getTotalOrders, analyticsExecutor
         );
+
+        CompletableFuture<List<UserGraphPointDto>> graphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                UserGraphMapper.map(userClient.getUserGraph()),
+                        analyticsExecutor
+                );
 
         CompletableFuture<Long> currentOrders =
                 CompletableFuture.supplyAsync(() ->
@@ -107,7 +115,8 @@ public class AdminDashboardAggregator {
 
         CompletableFuture.allOf(usersFuture, ordersFuture, revenueFuture,prevRevenueFuture,activityFuture,topMerchantsFuture,currentUsers,previousUsers,
                 currentOrders,
-                previousOrders
+                previousOrders,
+                graphFuture
         ).join();
 
         var users = (com.trademind.analytics.client.user.dto.UserCountResponse) usersFuture.join();
@@ -119,6 +128,8 @@ public class AdminDashboardAggregator {
 
         BigDecimal revenue = revenueFuture.join();
         BigDecimal prevRevenue = prevRevenueFuture.join();
+
+        List<UserGraphPointDto> userGraph = graphFuture.join();
 
         String change = ChangeUtil.calculateChange(revenue, prevRevenue);
         boolean positive = ChangeUtil.isPositive(revenue, prevRevenue);
@@ -192,10 +203,15 @@ public class AdminDashboardAggregator {
                 .build()
         );
 
-        return AdminDashboardResponse.builder()
+        AdminDashboardResponse res =  AdminDashboardResponse.builder()
                 .metrics(metrics)
                 .recentActivities(activities) // fill later (notification/audit)
                 .topMerchants(topMerchants)     // fill later
+                .userGrowth(userGraph)
                 .build();
+
+        System.out.println("\n\n\n response recieved in admin aggregator:   "+res+" \n\n\n");
+
+        return res;
     }
 }

@@ -165,4 +165,23 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     WHERE i.paymentStatus = 'PAID'
 """)
     AdminRevenueSummaryDto getAdminRevenueSummary();
+
+    @Query("""
+    SELECT FUNCTION('DATE', i.createdAt), SUM(i.grandTotal)
+    FROM Invoice i
+    WHERE i.paymentStatus = 'PAID'
+    AND i.createdAt >= :start
+    AND (:sourceId IS NULL OR i.sourceId = :sourceId)
+    AND (:sourceType IS NULL OR i.sourceType = :sourceType)
+    AND (:userId IS NULL OR i.userId = :userId)
+    GROUP BY FUNCTION('DATE', i.createdAt)
+    ORDER BY FUNCTION('DATE', i.createdAt)
+""")
+    List<Object[]> getRevenueGraph(
+            @Param("start") LocalDateTime start,
+            @Param("sourceId") Long sourceId,
+            @Param("sourceType") SourceType sourceType,
+            @Param("userId") Long userId
+    );
+
 }

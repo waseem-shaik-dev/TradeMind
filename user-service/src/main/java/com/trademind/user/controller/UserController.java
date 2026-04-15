@@ -4,6 +4,7 @@ import com.trademind.user.dto.UserProfileDto;
 import com.trademind.user.dto.UserResponseDto;
 import com.trademind.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,4 +31,21 @@ public class UserController {
     public UserResponseDto getUserById(@PathVariable Long id) {
         return userService.getUserById(id);
     }
+
+    @GetMapping("/{userId}/detailed")
+    public ResponseEntity<UserResponseDto> getFullUser(
+            @PathVariable Long userId
+    ) {
+        UserResponseDto response = userService.getFullUser(userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{userId}/business")
+    public ResponseEntity<UserResponseDto> getBusinessUser(
+            @PathVariable Long userId
+    ) {
+        UserResponseDto response = userService.getBusinessUser(userId);
+        return ResponseEntity.ok(response);
+    }
+
 }

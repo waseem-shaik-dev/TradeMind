@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**",
                                 "/internal/**"
                                 ).permitAll()
+                        .requestMatchers("/api/admin/users/analytics/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

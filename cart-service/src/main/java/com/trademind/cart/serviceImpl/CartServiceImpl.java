@@ -2,15 +2,18 @@ package com.trademind.cart.serviceImpl;
 
 import com.trademind.cart.client.CatalogueClient;
 import com.trademind.cart.client.InventoryClient;
+import com.trademind.cart.client.UserClient;
 import com.trademind.cart.dto.*;
 import com.trademind.cart.entity.*;
 import com.trademind.cart.enums.*;
 import com.trademind.cart.mapper.CartItemMapper;
 import com.trademind.cart.mapper.CartMapper;
 import com.trademind.cart.mapper.CartPriceMapper;
+import com.trademind.cart.mapper.SellerSnapshotBuilder;
 import com.trademind.cart.repository.CartItemRepository;
 import com.trademind.cart.repository.CartRepository;
 import com.trademind.cart.service.CartService;
+import com.trademind.events.common.SellerSnapshotDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,8 @@ public class CartServiceImpl implements CartService {
     private final CartItemMapper cartItemMapper;
     private final CartPriceMapper cartPriceMapper;
     private final CartMapper cartMapper;
+    private final SellerSnapshotBuilder snapshotBuilder;
+    private final UserClient userClient;
 
 
     // --------------------------------------------------
@@ -47,14 +52,14 @@ public class CartServiceImpl implements CartService {
         List<CartSummaryResponseDto> summaries =
                 carts.stream()
                         .map(cart -> {
-                            CartSourceDto source =
-                                    cartMapper.mapSource(cart);
+                            SellerSnapshotDto seller =
+                                    cartMapper.mapSeller(cart);
 
                             CartPriceSummaryDto price =
                                     cartPriceMapper.fromCartItems(cart.getItems());
 
 
-                            return cartMapper.toSummary(cart, source, price);
+                            return cartMapper.toSummary(cart, seller, price);
                         })
                         .toList();
 
@@ -80,7 +85,7 @@ public class CartServiceImpl implements CartService {
                     validateCart(cart);
             return cartMapper.toCartResponse(
                     cart,
-                    cartMapper.mapSource(cart),
+                    cartMapper.mapSeller(cart),
                     List.of(),
                     cartPriceMapper.toPriceSummary(List.of()),
                     validation
@@ -133,15 +138,15 @@ public class CartServiceImpl implements CartService {
         CartPriceSummaryDto price =
                 cartPriceMapper.toPriceSummary(items);
 
-        CartSourceDto source =
-                cartMapper.mapSource(cart);
+        SellerSnapshotDto seller =
+                cartMapper.mapSeller(cart);
 
         CartValidationDto validation =
                 validateCart(cart);
 
         return cartMapper.toCartResponse(
                 cart,
-                source,
+                seller,
                 items,
                 price,
                 validation
@@ -178,7 +183,6 @@ public class CartServiceImpl implements CartService {
             Long userId,
             AddToCartRequestDto request
     ) {
-
 
 
         if (request.quantity() == null || request.quantity() <= 0) {
@@ -442,12 +446,24 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Maximum cart limit exceeded");
         }
 
+        // 🔥 FETCH SHARED DTO
+        SellerSnapshotDto seller =
+                userClient.getCartSourceInfo(
+                        request.sourceId(),
+                        request.sourceRole()
+                );
+
         Cart cart = Cart.builder()
                 .userId(userId)
                 .sourceId(request.sourceId())
                 .sourceType(SourceType.valueOf(request.sourceRole()))
                 .status(CartStatus.ACTIVE)
                 .active(true)
+
+
+                // ✅ FULL SNAPSHOT
+                .sourceSnapshot(snapshotBuilder.toJson(seller))
+
                 .build();
 
         return cartRepository.save(cart);

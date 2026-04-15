@@ -2,5 +2,7 @@ package com.trademind.user.dto;
 
 public record RetailerProfileDto(
         String shopName,
-        String shopEmail
+        String shopEmail,
+        String shopImageUrl,
+        StoreAddressDto storeAddress
 ) {}

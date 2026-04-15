@@ -1,6 +1,7 @@
 package com.trademind.billing.service;
 
 import com.trademind.billing.dto.*;
+import com.trademind.billing.enums.SourceType;
 
 import java.util.List;
 
@@ -23,4 +24,9 @@ public interface BillingAnalyticsService {
     RevenueResponseDto getRevenue(RevenueRequestDto request);
 
     AdminRevenueSummaryDto getAdminRevenueSummary();
+
+    List<RevenueGraphDto> getRevenueGraph(
+            Long sourceId,
+            SourceType sourceType,
+            Long userId);
 }

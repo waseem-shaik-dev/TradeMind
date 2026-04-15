@@ -1,6 +1,7 @@
 package com.trademind.user.serviceImpl;
 
 import com.trademind.user.dto.UserCountResponse;
+import com.trademind.user.dto.UserGraphDto;
 import com.trademind.user.dto.UserGrowthResponse;
 import com.trademind.user.repository.UserRepository;
 import com.trademind.user.service.UserAnalyticsService;
@@ -46,5 +47,20 @@ public class UserAnalyticsServiceImpl implements UserAnalyticsService {
             LocalDateTime end) {
 
         return userRepository.countUsersByRoleBetween(start, end);
+    }
+
+    public List<UserGraphDto> getUserGraph() {
+
+        LocalDateTime start = LocalDateTime.now().minusDays(7);
+
+        return userRepository.getUserGraph(start)
+                .stream()
+                .map(r -> new UserGraphDto(
+                        r[0].toString(),
+                        ((Number) r[1]).longValue(),
+                        ((Number) r[2]).longValue(),
+                        ((Number) r[3]).longValue()
+                ))
+                .toList();
     }
 }

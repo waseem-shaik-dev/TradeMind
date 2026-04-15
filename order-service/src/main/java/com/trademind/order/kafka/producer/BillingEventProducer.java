@@ -3,6 +3,7 @@ package com.trademind.order.kafka.producer;
 import com.trademind.events.order.OrderBillingEvent;
 import com.trademind.order.entity.Order;
 import com.trademind.order.entity.OrderLineItem;
+import com.trademind.order.mapper.SellerSnapshotMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,7 @@ import java.util.List;
 public class BillingEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final SellerSnapshotMapper sellerSnapshotMapper;
 
     private static final String TOPIC = "order.billing.generate";
 
@@ -39,10 +41,12 @@ public class BillingEventProducer {
                 order.getCurrency(),
 
                 mapAddress(order),
-                mapItems(order.getLineItems())
+                mapItems(order.getLineItems()),
+                sellerSnapshotMapper.fromJson(order.getSellerSnapshot())
         );
 
         kafkaTemplate.send(TOPIC, event);
+        System.out.println("\n\n\n billing event fired from order service : "+event+"\n\n\n");
     }
 
     private com.trademind.events.order.OrderAddressDto mapAddress(Order order) {

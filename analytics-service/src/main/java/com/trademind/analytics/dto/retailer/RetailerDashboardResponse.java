@@ -16,4 +16,7 @@ public class RetailerDashboardResponse {
     private List<OrderSummaryDto> recentSales;
 
     private QuickStatsDto quickStats;
+
+    private List<GraphPointDto> revenueGraph;
+    private List<GraphPointDto> orderGraph;
 }

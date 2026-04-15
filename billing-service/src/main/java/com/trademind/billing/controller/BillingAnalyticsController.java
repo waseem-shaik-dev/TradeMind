@@ -1,6 +1,7 @@
 package com.trademind.billing.controller;
 
 import com.trademind.billing.dto.*;
+import com.trademind.billing.enums.SourceType;
 import com.trademind.billing.service.BillingAnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,15 @@ public class BillingAnalyticsController {
     @GetMapping("/revenue/by-merchant")
     public String getRevenueByMerchant(@RequestParam Long merchantId) {
         return service.getRevenueByMerchant(merchantId);
+    }
+
+    @GetMapping("/graph/revenue")
+    public List<RevenueGraphDto> getRevenueGraph(
+            @RequestParam(required = false) Long sourceId,
+            @RequestParam(required = false) SourceType sourceType,
+            @RequestParam(required = false) Long userId) {
+
+        return service.getRevenueGraph(sourceId, sourceType, userId);
     }
 
     @GetMapping("/revenue/by-retailer")

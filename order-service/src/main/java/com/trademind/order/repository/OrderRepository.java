@@ -230,6 +230,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<RecentOrderDto> getRecentOrders(@Param("userId") Long userId, Pageable pageable);
 
     @Query("""
+        SELECT new com.trademind.order.dto.response.RecentOrderDto(
+            o.orderNumber,
+            o.userId,
+            CAST(o.grandTotal as string),
+            CAST(o.orderStatus as string),
+            CAST(o.createdAt as string)
+        )
+        FROM Order o
+        WHERE o.sourceId = :sellerId
+        ORDER BY o.createdAt DESC
+    """)
+    List<RecentOrderDto> getRecentOrdersForSeller(@Param("sellerId") Long sellerId, Pageable pageable);
+
+    @Query("""
     SELECT new com.trademind.order.dto.response.OrderCountResponse(
         COUNT(o),
         COALESCE(SUM(CASE WHEN o.orderStatus = 'PENDING' THEN 1 ELSE 0 END), 0),
@@ -293,6 +307,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
 
 
+    @Query("""
+    SELECT FUNCTION('DATE', o.createdAt), COUNT(o)
+    FROM Order o
+    WHERE o.createdAt >= :start
+    AND (:sourceId IS NULL OR o.sourceId = :sourceId)
+    AND (:userId IS NULL OR o.userId = :userId)
+    GROUP BY FUNCTION('DATE', o.createdAt)
+    ORDER BY FUNCTION('DATE', o.createdAt)
+""")
+    List<Object[]> getOrderGraph(
+            @Param("start") LocalDateTime start,
+            @Param("sourceId") Long sourceId,
+            @Param("userId") Long userId
+    );
 
 
 }

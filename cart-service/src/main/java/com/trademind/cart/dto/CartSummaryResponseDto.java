@@ -1,11 +1,13 @@
 package com.trademind.cart.dto;
 
+import com.trademind.events.common.SellerSnapshotDto;
+
 import java.math.BigDecimal;
 
 public record CartSummaryResponseDto(
         Long cartId,
 
-        CartSourceDto source,
+        SellerSnapshotDto seller,
 
         Integer totalItems,
         Integer totalQuantity,

@@ -1,5 +1,7 @@
 package com.trademind.order.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trademind.events.common.SellerSnapshotDto;
 import com.trademind.events.order.OrderCreationRequestedEvent;
 import com.trademind.events.order.OrderItemDto;
 import com.trademind.order.dto.response.*;
@@ -21,6 +23,7 @@ public class OrderMapper {
 
     private final OrderActionResolver actionResolver;
     private final Utility utility;
+    private final SellerSnapshotMapper sellerSnapshotMapper;
 
 
     // ============================================================
@@ -57,6 +60,7 @@ public class OrderMapper {
                 .deliveryFee(event.deliveryFee())
                 .grandTotal(event.grandTotal())
                 .currency(event.currency())
+                .sellerSnapshot(sellerSnapshotMapper.toJson(event.seller()))
                 .build();
 
         // Address
@@ -112,7 +116,8 @@ public class OrderMapper {
                 order.getPaymentStatus(),
                 order.getGrandTotal(),
                 order.getCurrency(),
-                order.getCreatedAt()
+                order.getCreatedAt(),
+                sellerSnapshotMapper.fromJson(order.getSellerSnapshot())
         );
     }
 
@@ -142,6 +147,7 @@ public class OrderMapper {
                 order.getCurrency(),
                 mapAddress(order.getAddressSnapshot()),
                 mapLineItems(order.getLineItems()),
+                sellerSnapshotMapper.fromJson(order.getSellerSnapshot()),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );

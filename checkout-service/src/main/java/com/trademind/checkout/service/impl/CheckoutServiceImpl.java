@@ -1,5 +1,6 @@
 package com.trademind.checkout.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trademind.checkout.dto.request.*;
 import com.trademind.checkout.dto.response.*;
 import com.trademind.checkout.entity.*;
@@ -13,6 +14,7 @@ import com.trademind.checkout.repository.CheckoutSessionRepository;
 import com.trademind.checkout.service.CheckoutService;
 import com.trademind.checkout.feign.CartClient;
 import com.trademind.checkout.feign.UserClient;
+import com.trademind.events.common.SellerSnapshotDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,8 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CheckoutAggregateMapper aggregateMapper;
     private final CheckoutSessionMapper sessionMapper;
 
+    private final ObjectMapper objectMapper;
+
     private static final int CHECKOUT_EXPIRY_MINUTES = 15;
 
     // --------------------------------------------------------------------
@@ -49,7 +53,7 @@ public class CheckoutServiceImpl implements CheckoutService {
             throw new IllegalStateException(cart.validation().message());
         }
 
-        CartSourceDto source = cart.source();
+        var seller = cart.seller();
         CartPriceSummaryDto price = cart.priceSummary();
 
 
@@ -59,8 +63,8 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .userEmail(request.userEmail())
                 .cartId(cart.cartId())
                 .buyerType(BuyerType.valueOf(userRole))
-                .sourceId(source.sourceId())
-                .sourceType(SourceType.valueOf(source.sourceType()))
+                .sourceId(seller.sourceId())
+                .sourceType(SourceType.valueOf(seller.sourceType()))
                 .status(CheckoutStatus.CREATED)
                 .subtotalAmount(price.subTotal())
                 .taxAmount(price.tax())
@@ -69,6 +73,7 @@ public class CheckoutServiceImpl implements CheckoutService {
                 .grandTotal(price.grandTotal())
                 .currency("INR")
                 .expiresAt(LocalDateTime.now().plusMinutes(CHECKOUT_EXPIRY_MINUTES))
+                .sellerSnapshot(toJson(seller))
                 .build();
 
         cart.items().forEach(ci -> {
@@ -95,6 +100,15 @@ public class CheckoutServiceImpl implements CheckoutService {
         checkoutSessionRepository.save(session);
 
         return sessionMapper.toSummaryResponse(session);
+    }
+
+
+    private String toJson(SellerSnapshotDto seller) {
+        try {
+            return objectMapper.writeValueAsString(seller);
+        } catch (Exception e) {
+            throw new RuntimeException("Seller snapshot conversion failed", e);
+        }
     }
 
 

@@ -1,6 +1,7 @@
 package com.trademind.cart.client;
 
 import com.trademind.cart.dto.CartSourceInfoResponse;
+import com.trademind.events.common.SellerSnapshotDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 public interface UserClient {
 
     @GetMapping("/internal/user/cart-source")
-    CartSourceInfoResponse getCartSourceInfo(
+    SellerSnapshotDto getCartSourceInfo(
             @RequestParam Long sourceId,
             @RequestParam String sourceType
     );

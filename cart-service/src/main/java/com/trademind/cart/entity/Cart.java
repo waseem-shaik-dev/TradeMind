@@ -46,6 +46,9 @@ public class Cart {
     @Column(nullable = false)
     private CartStatus status;
 
+    @Column(columnDefinition = "TEXT")
+    private String sourceSnapshot;
+
     /**
      * Cart items belonging to this cart
      */

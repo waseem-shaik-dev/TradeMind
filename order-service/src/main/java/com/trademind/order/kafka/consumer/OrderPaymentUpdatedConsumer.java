@@ -2,10 +2,12 @@ package com.trademind.order.kafka.consumer;
 
 import com.trademind.events.order.OrderPaymentUpdatedEvent;
 import com.trademind.order.entity.Order;
+import com.trademind.order.entity.OrderStatusHistory;
 import com.trademind.order.enums.OrderStatus;
 import com.trademind.order.enums.PaymentStatus;
 import com.trademind.order.kafka.producer.BillingEventProducer;
 import com.trademind.order.repository.OrderRepository;
+import com.trademind.order.repository.OrderStatusHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -20,6 +22,7 @@ public class OrderPaymentUpdatedConsumer {
 
     private final OrderRepository orderRepository;
     private final BillingEventProducer billingEventProducer;
+    private final OrderStatusHistoryRepository historyRepository;
 
     @KafkaListener(
             topics = "order.payment.updated",
@@ -63,6 +66,8 @@ public class OrderPaymentUpdatedConsumer {
 
                     log.info("Order {} marked as CONFIRMED (payment successful)",
                             order.getId());
+
+                    saveHistory(order);
                 }
 
                 case FAILED -> {
@@ -77,6 +82,8 @@ public class OrderPaymentUpdatedConsumer {
 
                     log.info("Order {} marked as FAILED (payment failed)",
                             order.getId());
+
+                    saveHistory(order);
                 }
 
                 case INITIATED, PENDING -> {
@@ -92,5 +99,13 @@ public class OrderPaymentUpdatedConsumer {
             log.error("Error while updating order payment status inside consumer ",e);
             ack.acknowledge();
         }
+    }
+    private void saveHistory(Order order) {
+        historyRepository.save(
+                OrderStatusHistory.builder()
+                        .orderId(order.getId())
+                        .status(order.getOrderStatus())
+                        .build()
+        );
     }
 }

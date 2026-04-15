@@ -1,5 +1,6 @@
 package com.trademind.order.dto.response;
 
+import com.trademind.events.common.SellerSnapshotDto;
 import com.trademind.order.enums.*;
 
 import java.math.BigDecimal;
@@ -34,6 +35,8 @@ public record OrderDetailResponseDto(
         OrderAddressDto address,
 
         List<OrderLineItemDto> items,
+
+        SellerSnapshotDto seller,
 
         LocalDateTime createdAt,
         LocalDateTime updatedAt

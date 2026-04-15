@@ -131,6 +131,9 @@ public class Order {
     )
     private OrderAddressSnapshot addressSnapshot;
 
+    @Column(columnDefinition = "TEXT")
+    private String sellerSnapshot;
+
     // ------------------------------
     // Helper Methods (Aggregate logic)
     // ------------------------------

@@ -31,7 +31,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         // 🔓 Skip JWT validation for internal calls
-        if (path.startsWith("/internal/")) {
+        if (path.startsWith("/internal/") || path.startsWith("/api/admin/users/analytics")) {
             filterChain.doFilter(request, response);
             return;
         }

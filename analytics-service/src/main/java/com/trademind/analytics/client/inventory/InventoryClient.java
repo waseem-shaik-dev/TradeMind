@@ -18,7 +18,7 @@ public interface InventoryClient {
     List<LowStockResponse> getLowStockProducts(@RequestParam("sellerId") Long sellerId);
 
     @GetMapping("/api/inventories/count/low-stock")
-    int getLowStockCount(@RequestParam Long retailerId);
+    int getLowStockCount(@RequestParam Long sellerId);
 
     @GetMapping("/api/inventories/count/out-of-stock")
     int getOutOfStockCount(@RequestParam Long sellerId);

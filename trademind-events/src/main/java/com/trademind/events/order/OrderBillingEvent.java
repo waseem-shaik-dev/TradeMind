@@ -1,5 +1,7 @@
 package com.trademind.events.order;
 
+import com.trademind.events.common.SellerSnapshotDto;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -24,6 +26,8 @@ public record OrderBillingEvent(
 
         OrderAddressDto address,
 
-        List<OrderItemDto> items
+        List<OrderItemDto> items,
+
+        SellerSnapshotDto seller
 
 ) {}

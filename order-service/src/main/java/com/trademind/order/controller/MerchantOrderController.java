@@ -4,6 +4,7 @@ package com.trademind.order.controller;
 import com.trademind.order.dto.request.OrderStatusUpdateRequestDto;
 import com.trademind.order.dto.response.OrderDetailResponseDto;
 import com.trademind.order.dto.response.OrderStatusUpdateResponseDto;
+import com.trademind.order.dto.response.OrderTrackingStepDto;
 import com.trademind.order.dto.view.OrderFullViewDto;
 import com.trademind.order.service.OrderService;
 import jakarta.validation.Valid;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders/merchant")
@@ -56,5 +59,13 @@ public class MerchantOrderController {
                 merchantId,
                 "MERCHANT"
         );
+    }
+
+    @GetMapping("/{orderId}/tracking")
+    public List<OrderTrackingStepDto> getTracking(
+            @PathVariable Long orderId,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        return orderService.getTrackingSteps(orderId, userId, "MERCHANT");
     }
 }

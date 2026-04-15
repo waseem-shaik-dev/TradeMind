@@ -10,6 +10,7 @@ import com.trademind.analytics.dto.common.*;
 import com.trademind.analytics.dto.retailer.*;
 import com.trademind.analytics.helper.BillingAnalyticsHelper;
 import com.trademind.analytics.helper.OrderAnalyticsHelper;
+import com.trademind.analytics.mapper.GraphMapper;
 import com.trademind.analytics.mapper.OrderMapper;
 import com.trademind.analytics.util.ChangeUtil;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,22 @@ public class RetailerDashboardAggregator {
                         analyticsExecutor
                 );
 
+        CompletableFuture<List<GraphPointDto>> revenueGraphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                GraphMapper.mapRevenue(
+                                        billingClient.getRevenueGraph(retailerId, "RETAILER", null)
+                                ),
+                        analyticsExecutor
+                );
+
+        CompletableFuture<List<GraphPointDto>> orderGraphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                GraphMapper.mapOrders(
+                                        orderClient.getOrderGraph(retailerId, null)
+                                ),
+                        analyticsExecutor
+                );
+
         CompletableFuture<Long> products =
                 CompletableFuture.supplyAsync(() ->
                                 inventoryClient.getProductCount(retailerId, "RETAILER"),
@@ -67,7 +84,7 @@ public class RetailerDashboardAggregator {
 
         CompletableFuture<List<OrderSummaryResponse>> salesFuture =
                 CompletableFuture.supplyAsync(() ->
-                        orderClient.getRecentOrders(retailerId), analyticsExecutor);
+                        orderClient.getRecentOrdersForSeller(retailerId), analyticsExecutor);
 
         CompletableFuture<BigDecimal> weekly =
                 CompletableFuture.supplyAsync(() ->
@@ -83,13 +100,20 @@ public class RetailerDashboardAggregator {
 
         CompletableFuture.allOf(products, ordersFuture, todaySales, lowStock,salesFuture,monthly,weekly,
                 currOrdersFuture,
-                prevOrdersFuture
+                prevOrdersFuture,
+                orderGraphFuture,
+                revenueGraphFuture
                 ).join();
 
         OrderCountResponse orders = ordersFuture.join();
 
         long curOrders = currOrdersFuture.join();
         long prevOrders = prevOrdersFuture.join();
+
+        List<GraphPointDto> ordersGraph = orderGraphFuture.join();
+
+        List<GraphPointDto> revenueGraph = revenueGraphFuture.join();
+
 
         List<MetricCardDto> metrics = List.of(
                 MetricCardDto.builder().title("Products").value(String.valueOf(products.join())).build(),
@@ -119,11 +143,17 @@ public class RetailerDashboardAggregator {
 
         List<OrderSummaryDto> recentSales = OrderMapper.map(salesFuture.join());
 
-        return RetailerDashboardResponse.builder()
+        RetailerDashboardResponse res = RetailerDashboardResponse.builder()
                 .metrics(metrics)
                 .recentSales(recentSales)
                 .quickStats(stats)
+                .revenueGraph(revenueGraph)
+                .orderGraph(ordersGraph)
                 .build();
+
+        System.out.println("\n\n\n response recieved in retailer aggregator:   "+res+" \n\n\n");
+
+        return res;
     }
 
 }

@@ -1,6 +1,7 @@
 package com.trademind.order.service.impl;
 
 import com.trademind.order.dto.response.OrderCountResponse;
+import com.trademind.order.dto.response.OrderGraphDto;
 import com.trademind.order.dto.response.RecentOrderDto;
 import com.trademind.order.repository.OrderRepository;
 import com.trademind.order.service.OrderAnalyticsService;
@@ -68,6 +69,12 @@ public class OrderAnalyticsServiceImpl implements OrderAnalyticsService {
     }
 
     @Override
+    public List<RecentOrderDto> getRecentOrdersForSeller(Long sellerId) {
+        return orderRepository.getRecentOrdersForSeller(sellerId,
+                org.springframework.data.domain.PageRequest.of(0, 10));
+    }
+
+    @Override
     public OrderCountResponse getOrdersBetween(LocalDateTime start, LocalDateTime end) {
         return orderRepository.getOrderStatsBetween(start, end);
     }
@@ -87,5 +94,18 @@ public class OrderAnalyticsServiceImpl implements OrderAnalyticsService {
     public OrderCountResponse getCustomerOrdersBetween(Long customerId, LocalDateTime start, LocalDateTime end) {
         return orderRepository.getCustomerOrdersBetween(customerId, start, end);
 
+    }
+
+    public List<OrderGraphDto> getOrderGraph(Long sourceId, Long userId) {
+
+        LocalDateTime start = LocalDateTime.now().minusDays(7);
+
+        return orderRepository.getOrderGraph(start, sourceId, userId)
+                .stream()
+                .map(r -> new OrderGraphDto(
+                        r[0].toString(),
+                        (Long) r[1]
+                ))
+                .toList();
     }
 }

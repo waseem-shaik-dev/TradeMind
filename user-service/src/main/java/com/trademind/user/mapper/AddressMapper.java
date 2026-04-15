@@ -20,7 +20,8 @@ public class AddressMapper {
                 entity.getCity(),
                 entity.getState(),
                 entity.getPincode(),
-                entity.getCountry()
+                entity.getCountry(),
+                (entity.getIsPrimary()!=null)?entity.getIsPrimary():false
         );
     }
 

@@ -2,6 +2,7 @@ package com.trademind.billing.kafka.consumer;
 
 import com.trademind.billing.entity.Invoice;
 import com.trademind.billing.mapper.InvoiceMapper;
+import com.trademind.billing.mapper.SellerSnapshotMapper;
 import com.trademind.billing.repository.InvoiceRepository;
 import com.trademind.events.order.OrderBillingEvent;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class BillingInvoiceConsumer {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceMapper invoiceMapper;
+    private final SellerSnapshotMapper sellerSnapshotMapper;
 
     @KafkaListener(
             topics = "order.billing.generate",
@@ -28,40 +30,40 @@ public class BillingInvoiceConsumer {
 
         try {
 
-
             log.info("Received OrderBillingEvent for orderId={}", event.orderId());
 
-            // -------------------------------------------------------
-            // 1️⃣ Only process PAID orders
-            // -------------------------------------------------------
+            // ✅ Only PAID
             if (!event.paymentStatus().equals("PAID")) {
-                log.info("Skipping invoice generation for orderId={} as payment not PAID", event.orderId());
                 return;
             }
 
-            // -------------------------------------------------------
-            // 2️⃣ Idempotency check
-            // -------------------------------------------------------
+            // ✅ Idempotency
             if (invoiceRepository.existsByOrderId(event.orderId())) {
-                log.info("Invoice already exists for orderId={}, skipping", event.orderId());
                 return;
             }
 
             // -------------------------------------------------------
-            // 3️⃣ Create Invoice
+            // 1️⃣ CREATE INVOICE
             // -------------------------------------------------------
             Invoice invoice = invoiceMapper.fromEvent(event);
 
+            // -------------------------------------------------------
+            // 3️⃣ STORE SNAPSHOT
+            // -------------------------------------------------------
+            invoice.setSellerSnapshot(
+                    sellerSnapshotMapper.toJson(event.seller())
+            );
+            // -------------------------------------------------------
+            // 4️⃣ SAVE
+            // -------------------------------------------------------
             invoiceRepository.save(invoice);
 
-            log.info("Invoice created successfully for orderId={}, invoiceId={}",
-                    event.orderId(),
-                    invoice.getId());
+            log.info("Invoice created with seller snapshot for orderId={}", event.orderId());
 
             ack.acknowledge();
 
         } catch (Exception e) {
-            log.error("Error in billing consumer ",e);
+            log.error("Error in billing consumer", e);
             ack.acknowledge();
         }
     }

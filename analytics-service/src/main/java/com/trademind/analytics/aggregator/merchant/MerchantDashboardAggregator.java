@@ -10,6 +10,7 @@ import com.trademind.analytics.dto.common.*;
 import com.trademind.analytics.dto.merchant.MerchantDashboardResponse;
 import com.trademind.analytics.helper.BillingAnalyticsHelper;
 import com.trademind.analytics.helper.OrderAnalyticsHelper;
+import com.trademind.analytics.mapper.GraphMapper;
 import com.trademind.analytics.mapper.OrderMapper;
 import com.trademind.analytics.util.ChangeUtil;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,22 @@ public class MerchantDashboardAggregator {
         CompletableFuture<Long> productsFuture =
                 CompletableFuture.supplyAsync(() ->
                                 inventoryClient.getProductCount(merchantId, "MERCHANT"),
+                        analyticsExecutor
+                );
+
+        CompletableFuture<List<GraphPointDto>> revenueGraphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                GraphMapper.mapRevenue(
+                                        billingClient.getRevenueGraph(merchantId, "MERCHANT", null)
+                                ),
+                        analyticsExecutor
+                );
+
+        CompletableFuture<List<GraphPointDto>> orderGraphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                GraphMapper.mapOrders(
+                                        orderClient.getOrderGraph(merchantId, null)
+                                ),
                         analyticsExecutor
                 );
 
@@ -77,11 +94,13 @@ public class MerchantDashboardAggregator {
 
         CompletableFuture<List<OrderSummaryResponse>> recentOrdersFuture =
                 CompletableFuture.supplyAsync(() ->
-                        orderClient.getRecentOrders(merchantId), analyticsExecutor);
+                        orderClient.getRecentOrdersForSeller(merchantId), analyticsExecutor);
 
         CompletableFuture.allOf(productsFuture, ordersFuture, revenueFuture,prevRevenueFuture, stockFuture,recentOrdersFuture,
                 prevOrdersFuture,
-                currOrdersFuture
+                currOrdersFuture,
+                revenueGraphFuture,
+                orderGraphFuture
                 ).join();
 
         OrderCountResponse orders = ordersFuture.join();
@@ -91,6 +110,12 @@ public class MerchantDashboardAggregator {
 
         long currOrders = currOrdersFuture.join();
         long prevOrders = prevOrdersFuture.join();
+
+        List<GraphPointDto> ordersGraph = orderGraphFuture.join();
+
+        List<GraphPointDto> revenueGraph = revenueGraphFuture.join();
+
+
 
 
         List<MetricCardDto> metrics = List.of(
@@ -130,10 +155,16 @@ public class MerchantDashboardAggregator {
         List<OrderSummaryDto> recentOrders =
                 OrderMapper.map(recentOrdersFuture.join());
 
-        return MerchantDashboardResponse.builder()
+        MerchantDashboardResponse res = MerchantDashboardResponse.builder()
                 .metrics(metrics)
                 .recentOrders(recentOrders) // next
                 .lowStockAlerts(lowStock)
+                .revenueGraph(revenueGraph)
+                .orderGraph(ordersGraph)
                 .build();
+
+        System.out.println("\n\n\n response received in merchant aggregator:   "+res+" \n\n\n");
+
+        return res;
     }
 }

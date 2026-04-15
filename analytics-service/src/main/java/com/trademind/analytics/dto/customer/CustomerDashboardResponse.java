@@ -14,4 +14,7 @@ public class CustomerDashboardResponse {
     private List<MetricCardDto> metrics;
 
     private List<OrderSummaryDto> recentOrders;
+
+    private List<GraphPointDto> spendingGraph;
+    private List<GraphPointDto> orderGraph;
 }

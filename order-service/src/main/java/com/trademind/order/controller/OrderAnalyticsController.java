@@ -1,6 +1,7 @@
 package com.trademind.order.controller;
 
 import com.trademind.order.dto.response.OrderCountResponse;
+import com.trademind.order.dto.response.OrderGraphDto;
 import com.trademind.order.dto.response.RecentOrderDto;
 import com.trademind.order.service.OrderAnalyticsService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,19 @@ public class OrderAnalyticsController {
     @GetMapping("/active")
     public long getActiveOrders(@RequestParam Long customerId) {
         return service.getActiveOrders(customerId);
+    }
+
+    @GetMapping("/recent/seller")
+    public List<RecentOrderDto> getRecentOrdersForSeller(@RequestParam Long sellerId) {
+        return service.getRecentOrdersForSeller(sellerId);
+    }
+
+    @GetMapping("/graph")
+    public List<OrderGraphDto> getOrderGraph(
+            @RequestParam(required = false) Long sourceId,
+            @RequestParam(required = false) Long userId) {
+
+        return service.getOrderGraph(sourceId, userId);
     }
 
     @GetMapping("/recent")

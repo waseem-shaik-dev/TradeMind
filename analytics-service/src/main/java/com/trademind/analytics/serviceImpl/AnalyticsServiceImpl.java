@@ -28,8 +28,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     // ================= ADMIN =================
     @Override
-    @Cacheable(value = "adminDashboard", key = "'admin'")
-    @CircuitBreaker(name = "analyticsService", fallbackMethod = "adminFallback")
+//    @Cacheable(value = "adminDashboard", key = "'admin'")
+//    @CircuitBreaker(name = "analyticsService",fallbackMethod = "adminFallback")
     public AdminDashboardResponse getAdminDashboard() {
         return adminAggregator.getDashboard();
     }
@@ -44,8 +44,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     // ================= MERCHANT =================
     @Override
-    @Cacheable(value = "merchantDashboard", key = "#merchantId")
-    @CircuitBreaker(name = "analyticsService", fallbackMethod = "merchantFallback")
+//    @Cacheable(value = "merchantDashboard", key = "#merchantId")
+//    @CircuitBreaker(name = "analyticsService", fallbackMethod = "merchantFallback")
     public MerchantDashboardResponse getMerchantDashboard(Long merchantId) {
         return merchantAggregator.getDashboard(merchantId);
     }
@@ -60,8 +60,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     // ================= RETAILER =================
     @Override
-    @Cacheable(value = "retailerDashboard", key = "#retailerId")
-    @CircuitBreaker(name = "analyticsService", fallbackMethod = "retailerFallback")
+//    @Cacheable(value = "retailerDashboard", key = "#retailerId")
+ //   @CircuitBreaker(name = "analyticsService", fallbackMethod = "retailerFallback")
     public RetailerDashboardResponse getRetailerDashboard(Long retailerId) {
         return retailerAggregator.getDashboard(retailerId);
     }
@@ -76,8 +76,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     // ================= CUSTOMER =================
     @Override
-    @Cacheable(value = "customerDashboard", key = "#customerId")
-    @CircuitBreaker(name = "analyticsService", fallbackMethod = "customerFallback")
+//    @Cacheable(value = "customerDashboard", key = "#customerId")
+//    @CircuitBreaker(name = "analyticsService", fallbackMethod = "customerFallback")
     public CustomerDashboardResponse getCustomerDashboard(Long customerId) {
         return customerAggregator.getDashboard(customerId);
     }

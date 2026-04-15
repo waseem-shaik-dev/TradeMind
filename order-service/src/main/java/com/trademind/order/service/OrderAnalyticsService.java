@@ -1,6 +1,7 @@
 package com.trademind.order.service;
 
 import com.trademind.order.dto.response.OrderCountResponse;
+import com.trademind.order.dto.response.OrderGraphDto;
 import com.trademind.order.dto.response.RecentOrderDto;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,8 @@ public interface OrderAnalyticsService {
 
     List<RecentOrderDto> getRecentOrders(Long userId);
 
+    List<RecentOrderDto> getRecentOrdersForSeller(Long sellerId);
+
     OrderCountResponse getOrdersBetween(LocalDateTime start, LocalDateTime end);
 
     OrderCountResponse getMerchantOrdersBetween(Long merchantId, LocalDateTime start, LocalDateTime end);
@@ -35,4 +38,6 @@ public interface OrderAnalyticsService {
     OrderCountResponse getRetailerOrdersBetween(Long retailerId, LocalDateTime start, LocalDateTime end);
 
     OrderCountResponse getCustomerOrdersBetween(Long customerId, LocalDateTime start, LocalDateTime end);
+
+    List<OrderGraphDto> getOrderGraph(Long sourceId, Long userId);
 }

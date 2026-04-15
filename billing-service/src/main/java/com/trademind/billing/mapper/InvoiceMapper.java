@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InvoiceMapper {
 
+    private final SellerSnapshotMapper sellerSnapshotMapper;
     private final ObjectMapper objectMapper;
 
     private static final String SECRET = "billing-secret-key"; // later move to config
@@ -100,6 +101,7 @@ public class InvoiceMapper {
                 invoice.getCurrency(),
 
                 invoice.getAddressSnapshot(),
+                sellerSnapshotMapper.fromJson(invoice.getSellerSnapshot()),
 
                 mapLineItems(invoice.getItems()),
 

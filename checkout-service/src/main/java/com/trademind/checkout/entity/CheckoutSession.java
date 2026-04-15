@@ -75,6 +75,9 @@ public class CheckoutSession extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String sellerSnapshot;
+
     // ---- Relationships ----
     @OneToMany(
             mappedBy = "checkoutSession",

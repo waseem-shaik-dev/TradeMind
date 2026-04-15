@@ -5,6 +5,7 @@ import com.trademind.events.order.OrderCreationRequestedEvent;
 import com.trademind.notification.sdk.annotation.Notify;
 import com.trademind.order.entity.Order;
 import com.trademind.order.mapper.OrderMapper;
+import com.trademind.order.mapper.SellerSnapshotMapper;
 import com.trademind.order.repository.OrderRepository;
 import com.trademind.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,8 @@ public class OrderCreationConsumer {
             // -------------------------------
             if (orderRepository.existsByCheckoutId(event.checkoutId())) {
                 log.info("Order already exists for checkoutId={}, skipping", event.checkoutId());
+                ack.acknowledge();
+                return;
             }
 
             // -------------------------------

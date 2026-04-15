@@ -8,6 +8,7 @@ import com.trademind.analytics.dto.common.*;
 import com.trademind.analytics.dto.customer.CustomerDashboardResponse;
 import com.trademind.analytics.helper.BillingAnalyticsHelper;
 import com.trademind.analytics.helper.OrderAnalyticsHelper;
+import com.trademind.analytics.mapper.GraphMapper;
 import com.trademind.analytics.mapper.OrderMapper;
 import com.trademind.analytics.util.ChangeUtil;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,22 @@ public class CustomerDashboardAggregator {
                         orderClient.getOrdersByCustomer(customerId), analyticsExecutor
                 );
 
+        CompletableFuture<List<GraphPointDto>> spendingGraphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                GraphMapper.mapRevenue(
+                                        billingClient.getRevenueGraph(null, null, customerId)
+                                ),
+                        analyticsExecutor
+                );
+
+        CompletableFuture<List<GraphPointDto>> orderGraphFuture =
+                CompletableFuture.supplyAsync(() ->
+                                GraphMapper.mapOrders(
+                                        orderClient.getOrderGraph(null, customerId)
+                                ),
+                        analyticsExecutor
+                );
+
         CompletableFuture<Long> activeOrders =
                 CompletableFuture.supplyAsync(() ->
                         orderClient.getActiveOrders(customerId), analyticsExecutor);
@@ -63,13 +80,19 @@ public class CustomerDashboardAggregator {
 
         CompletableFuture.allOf(totalOrders, activeOrders, totalSpent,ordersFuture,
                 currOrdersFuture,
-                prevOrdersFuture
+                prevOrdersFuture,
+                orderGraphFuture,
+                spendingGraphFuture
                 ).join();
 
         OrderCountResponse orderStats = totalOrders.join();
 
         long currOrders = currOrdersFuture.join();
         long prevOrders = prevOrdersFuture.join();
+
+        List<GraphPointDto> ordersGraph = orderGraphFuture.join();
+
+        List<GraphPointDto> spendingGraph = spendingGraphFuture.join();
 
 
 
@@ -95,9 +118,16 @@ public class CustomerDashboardAggregator {
 
         List<OrderSummaryDto> recentOrders = OrderMapper.map(ordersFuture.join());
 
-        return CustomerDashboardResponse.builder()
+        CustomerDashboardResponse res = CustomerDashboardResponse.builder()
                 .metrics(metrics)
                 .recentOrders(recentOrders)
+                .orderGraph(ordersGraph)
+                .spendingGraph(spendingGraph)
                 .build();
+
+
+        System.out.println("\n\n\n response received in customer aggregator:   "+res+" \n\n\n");
+
+        return res;
     }
 }

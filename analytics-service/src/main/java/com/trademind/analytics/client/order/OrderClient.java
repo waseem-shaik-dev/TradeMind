@@ -1,6 +1,7 @@
 package com.trademind.analytics.client.order;
 
 import com.trademind.analytics.client.order.dto.OrderCountResponse;
+import com.trademind.analytics.client.order.dto.OrderGraphDto;
 import com.trademind.analytics.client.order.dto.OrderSummaryResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,9 @@ public interface OrderClient {
 
     @GetMapping("/api/orders/recent")
     List<OrderSummaryResponse> getRecentOrders(@RequestParam Long userId);
+
+    @GetMapping("/api/orders/recent/seller")
+    List<OrderSummaryResponse> getRecentOrdersForSeller(@RequestParam Long sellerId);
 
     @GetMapping("/api/orders/active")
     Long getActiveOrders(@RequestParam Long customerId);
@@ -61,6 +65,12 @@ public interface OrderClient {
             @RequestParam Long customerId,
             @RequestParam LocalDateTime start,
             @RequestParam LocalDateTime end
+    );
+
+    @GetMapping("/api/orders/graph")
+    List<OrderGraphDto> getOrderGraph(
+            @RequestParam(required = false) Long sourceId,
+            @RequestParam(required = false) Long userId
     );
 
 }

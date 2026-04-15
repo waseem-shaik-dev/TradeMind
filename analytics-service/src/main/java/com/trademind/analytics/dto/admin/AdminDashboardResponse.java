@@ -16,4 +16,6 @@ public class AdminDashboardResponse {
     private List<RecentActivityDto> recentActivities;
 
     private List<TopPerformerDto> topMerchants;
+
+    private List<UserGraphPointDto> userGrowth;
 }

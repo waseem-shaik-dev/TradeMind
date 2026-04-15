@@ -84,6 +84,9 @@ public class Invoice {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String addressSnapshot;
 
+    @Column(columnDefinition = "TEXT")
+    private String sellerSnapshot;
+
     // Hash for verification
     @Column(nullable = false)
     private String invoiceHash;

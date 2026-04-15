@@ -16,4 +16,7 @@ public class MerchantDashboardResponse {
     private List<OrderSummaryDto> recentOrders;
 
     private List<LowStockDto> lowStockAlerts;
+
+    private List<GraphPointDto> revenueGraph;
+    private List<GraphPointDto> orderGraph;
 }

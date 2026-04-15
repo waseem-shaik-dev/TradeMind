@@ -12,5 +12,6 @@ public record AddressDto(
         String city,
         String state,
         String pincode,
-        String country
+        String country,
+        boolean isPrimary
 ) {}

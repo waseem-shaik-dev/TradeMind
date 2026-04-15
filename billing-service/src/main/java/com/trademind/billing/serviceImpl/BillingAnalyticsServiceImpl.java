@@ -1,6 +1,7 @@
 package com.trademind.billing.serviceImpl;
 
 import com.trademind.billing.dto.*;
+import com.trademind.billing.enums.SourceType;
 import com.trademind.billing.repository.InvoiceRepository;
 import com.trademind.billing.service.BillingAnalyticsService;
 import lombok.RequiredArgsConstructor;
@@ -80,5 +81,21 @@ public class BillingAnalyticsServiceImpl implements BillingAnalyticsService {
     @Override
     public AdminRevenueSummaryDto getAdminRevenueSummary() {
         return repository.getAdminRevenueSummary();
+    }
+
+    public List<RevenueGraphDto> getRevenueGraph(
+            Long sourceId,
+            SourceType sourceType,
+            Long userId) {
+
+        LocalDateTime start = LocalDateTime.now().minusDays(7);
+
+        return repository.getRevenueGraph(start, sourceId, sourceType, userId)
+                .stream()
+                .map(r -> new RevenueGraphDto(
+                        r[0].toString(),
+                        r[1].toString()
+                ))
+                .toList();
     }
 }

@@ -1,6 +1,7 @@
 package com.trademind.events.order;
 
 import com.trademind.events.checkout.common.EventMetadata;
+import com.trademind.events.common.SellerSnapshotDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -41,6 +42,8 @@ public record OrderCreationRequestedEvent(
 
         // --- Items ---
         List<OrderItemDto> items,
+
+        SellerSnapshotDto seller,
 
         LocalDateTime createdAt
 
