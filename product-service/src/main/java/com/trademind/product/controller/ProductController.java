@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -65,6 +66,8 @@ public class ProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Boolean active,
 
             @RequestParam(defaultValue = "0") int page,
@@ -77,9 +80,10 @@ public class ProductController {
                 new ProductSearchRequest(
                         keyword,
                         categoryId,
+                        null, // will be resolved in service
                         brandId,
-                        null,
-                        null,
+                        minPrice,
+                        maxPrice,
                         active
                 );
 

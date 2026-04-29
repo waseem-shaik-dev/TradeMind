@@ -8,9 +8,16 @@ import lombok.*;
 @Builder
 public class OrderSummaryResponse {
 
-    private String orderId;
-    private String name;
+    private String orderNumber;
+    private Long userId;
     private String amount;
     private String status;
     private String time;
 }
+
+
+//private String orderNumber;
+//private Long userId;
+//private String amount;
+//private String status;
+//private String createdAt;

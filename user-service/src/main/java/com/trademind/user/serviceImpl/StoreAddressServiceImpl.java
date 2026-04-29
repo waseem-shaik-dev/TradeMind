@@ -150,4 +150,29 @@ public class StoreAddressServiceImpl implements StoreAddressService {
 
         }
     }
+
+    @Override
+    public StoreAddressDto updateStoreAddressByAdmin(Long userId, StoreAddressDto dto) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        StoreAddress address = getStoreAddressFromProfile(user);
+
+        if (address == null) {
+            throw new RuntimeException("Store address not found");
+        }
+
+        address.setLine1(dto.line1());
+        address.setLine2(dto.line2());
+        address.setCity(dto.city());
+        address.setState(dto.state());
+        address.setPincode(dto.pincode());
+        address.setCountry(dto.country());
+        address.setLatitude(dto.latitude());
+        address.setLongitude(dto.longitude());
+        address.setMapUrl(dto.mapUrl());
+
+        return mapper.toDto(address);
+    }
 }

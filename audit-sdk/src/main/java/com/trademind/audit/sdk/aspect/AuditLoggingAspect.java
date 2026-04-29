@@ -78,7 +78,14 @@ public class AuditLoggingAspect {
             }
         }
 
-        Map<String, Object> actor = contextProvider.getActor();
+        Map<String, Object> actor = contextProvider.getActor(result);
+
+        Object userId = actor.get("userId");
+
+        if ((entityId == null || "UNKNOWN".equals(entityId)) && userId != null) {
+            entityId = userId.toString();
+        }
+
 
         return new AuditEvent(
                 UUID.randomUUID(),

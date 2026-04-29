@@ -396,11 +396,11 @@ public class OrderServiceImpl implements OrderService {
 
     }
 
-//    @Notify(
-//            type = NotificationType.ORDER_CREATED,
-//            recipientExpression = "#order.userEmail",
-//            dataExpression = "{'orderId': #order.id, 'amount': #order.grandTotal}"
-//    )
+    @Notify(
+            type = NotificationType.ORDER_CREATED,
+            recipientExpression = "#order.userEmail",
+            dataExpression = "{'orderId': #order.id, 'amount': #order.grandTotal}"
+    )
     public Order saveOrderWithNotification(Order order) {
 
 

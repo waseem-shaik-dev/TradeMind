@@ -30,4 +30,6 @@ public interface MasterDataService {
 
     List<IdNameResponse> createCategoriesBulk(
             List<CreateCategoryRequest> requests);
+
+    List<Long> getAllDescendantCategoryIds(Long parentId);
 }

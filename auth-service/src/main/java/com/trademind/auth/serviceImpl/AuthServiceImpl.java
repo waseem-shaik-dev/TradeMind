@@ -214,7 +214,8 @@ public class AuthServiceImpl implements AuthService {
 
     @AuditLoggable(
             action = AuditAction.USER_LOGOUT,
-            entityType = EntityType.USER
+            entityType = EntityType.USER,
+            entityIdExpression = "#userId"   // ✅ use explicit variable
     )
     @Override
     public void logout(HttpServletRequest request,
@@ -224,6 +225,9 @@ public class AuthServiceImpl implements AuthService {
 
         RefreshToken token =
                 refreshService.validateToken(rawToken);
+
+        // ✅ FORCE LOAD USER ID
+        Long userId = token.getUser().getId();
 
         refreshService.revokeToken(token);
 

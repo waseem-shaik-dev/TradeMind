@@ -39,6 +39,28 @@ public class AvatarController {
         );
     }
 
+    // URL UPLOAD
+    @PostMapping("/url")
+    public ResponseEntity<String> uploadAvatarByUrl(
+            @RequestHeader("X-USER-ID") Long userId,
+            @RequestParam String imageUrl
+    ) {
+        return ResponseEntity.ok(
+                avatarService.uploadAvatarByUrl(userId, imageUrl)
+        );
+    }
+
+    // URL UPDATE
+    @PutMapping("/url")
+    public ResponseEntity<String> updateAvatarByUrl(
+            @RequestHeader("X-USER-ID") Long userId,
+            @RequestParam String imageUrl
+    ) {
+        return ResponseEntity.ok(
+                avatarService.updateAvatarByUrl(userId, imageUrl)
+        );
+    }
+
     /**
      * Delete avatar
      */

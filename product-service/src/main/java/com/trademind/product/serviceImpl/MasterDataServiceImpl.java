@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 @Service
 @RequiredArgsConstructor
@@ -204,6 +207,28 @@ public class MasterDataServiceImpl implements MasterDataService {
         return saved.stream()
                 .map(c -> new IdNameResponse(c.getId(), c.getName()))
                 .toList();
+    }
+
+    public List<Long> getAllDescendantCategoryIds(Long parentId) {
+
+        List<Long> result = new ArrayList<>();
+        Queue<Long> queue = new LinkedList<>();
+        queue.add(parentId);
+
+        while (!queue.isEmpty()) {
+            Long current = queue.poll();
+            result.add(current);
+
+            List<Long> children = categoryRepository
+                    .findByParentCategoryId(current)
+                    .stream()
+                    .map(ProductCategory::getId)
+                    .toList();
+
+            queue.addAll(children);
+        }
+
+        return result;
     }
 
 }

@@ -1,5 +1,6 @@
 package com.trademind.user.service;
 
+import com.trademind.user.dto.AdminProfileDto;
 import com.trademind.user.dto.UserResponseDto;
 import com.trademind.user.enums.UserRole;
 import com.trademind.user.enums.UserStatus;
@@ -13,4 +14,5 @@ public interface AdminUserService {
     List<UserResponseDto> getUsersByRole(UserRole role);
 
     UserResponseDto updateUserStatus(Long userId, UserStatus status);
+    AdminProfileDto updateAdminProfile(Long userId, AdminProfileDto dto);
 }

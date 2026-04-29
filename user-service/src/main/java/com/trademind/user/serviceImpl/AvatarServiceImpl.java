@@ -57,11 +57,9 @@ public class AvatarServiceImpl implements AvatarService {
     public void deleteAvatar(Long userId) {
         UserProfile profile = getProfile(userId);
 
-        if (profile.getAvatarPublicId() == null) {
-            return; // idempotent
+        if (profile.getAvatarPublicId() != null) {
+            deleteFromCloudinary(profile.getAvatarPublicId());
         }
-
-        deleteFromCloudinary(profile.getAvatarPublicId());
 
         profile.setAvatarUrl(null);
         profile.setAvatarPublicId(null);
@@ -100,4 +98,46 @@ public class AvatarServiceImpl implements AvatarService {
             throw new RuntimeException("Failed to delete avatar", e);
         }
     }
+
+    @Override
+    public String uploadAvatarByUrl(Long userId, String imageUrl) {
+
+        validateUrl(imageUrl);
+
+        UserProfile profile = getProfile(userId);
+
+        if (profile.getAvatarPublicId() != null || profile.getAvatarUrl() != null) {
+            throw new RuntimeException("Avatar already exists. Use update instead.");
+        }
+
+        profile.setAvatarUrl(imageUrl);
+        profile.setAvatarPublicId(null); // IMPORTANT
+
+        return profile.getAvatarUrl();
+    }
+
+    @Override
+    public String updateAvatarByUrl(Long userId, String imageUrl) {
+
+        validateUrl(imageUrl);
+
+        UserProfile profile = getProfile(userId);
+
+        // delete old cloudinary image if exists
+        if (profile.getAvatarPublicId() != null) {
+            deleteFromCloudinary(profile.getAvatarPublicId());
+        }
+
+        profile.setAvatarUrl(imageUrl);
+        profile.setAvatarPublicId(null);
+
+        return profile.getAvatarUrl();
+    }
+
+    private void validateUrl(String url) {
+        if (url == null || !url.startsWith("http")) {
+            throw new RuntimeException("Invalid image URL");
+        }
+    }
+
 }

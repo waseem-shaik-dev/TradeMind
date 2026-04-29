@@ -66,4 +66,46 @@ public class ShopImageController {
 
         service.deleteMerchantShopImage(userId);
     }
+
+
+    /* ===============================
+   RETAILER URL
+   =============================== */
+
+    @PostMapping("/retailer/url")
+    public String uploadRetailerByUrl(
+            @RequestParam Long userId,
+            @RequestParam String imageUrl) {
+
+        return service.uploadRetailerShopImageByUrl(userId, imageUrl);
+    }
+
+    @PutMapping("/retailer/url")
+    public String updateRetailerByUrl(
+            @RequestParam Long userId,
+            @RequestParam String imageUrl) {
+
+        return service.updateRetailerShopImageByUrl(userId, imageUrl);
+    }
+
+/* ===============================
+   MERCHANT URL
+   =============================== */
+
+    @PostMapping("/merchant/url")
+    public String uploadMerchantByUrl(
+            @RequestParam Long userId,
+            @RequestParam String imageUrl) {
+
+        return service.uploadMerchantShopImageByUrl(userId, imageUrl);
+    }
+
+    @PutMapping("/merchant/url")
+    public String updateMerchantByUrl(
+            @RequestParam Long userId,
+            @RequestParam String imageUrl) {
+
+        return service.updateMerchantShopImageByUrl(userId, imageUrl);
+    }
+
 }

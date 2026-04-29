@@ -11,4 +11,6 @@ public interface StoreAddressService {
     StoreAddressDto updateStoreAddress(Long userId, StoreAddressDto dto);
 
     void deleteStoreAddress(Long userId);
+
+    StoreAddressDto updateStoreAddressByAdmin(Long userId, StoreAddressDto dto);
 }

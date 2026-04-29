@@ -9,4 +9,8 @@ public interface AvatarService {
     String updateAvatar(Long userId, MultipartFile file);
 
     void deleteAvatar(Long userId);
+
+    String uploadAvatarByUrl(Long userId, String imageUrl);
+
+    String updateAvatarByUrl(Long userId, String imageUrl);
 }

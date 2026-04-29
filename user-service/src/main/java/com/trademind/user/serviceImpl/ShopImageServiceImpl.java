@@ -101,7 +101,9 @@ public class ShopImageServiceImpl implements ShopImageService {
         RetailerProfile retailer = retailerRepo.findByUser_Id(userId)
                 .orElseThrow(() -> new RuntimeException("Retailer not found"));
 
-        deleteFromCloudinary(retailer.getShopImagePublicId());
+        if (retailer.getShopImagePublicId() != null) {
+            deleteFromCloudinary(retailer.getShopImagePublicId());
+        }
 
         retailer.setShopImageUrl(null);
         retailer.setShopImagePublicId(null);
@@ -113,7 +115,9 @@ public class ShopImageServiceImpl implements ShopImageService {
         MerchantProfile merchant = merchantRepo.findByUser_Id(userId)
                 .orElseThrow(() -> new RuntimeException("Merchant not found"));
 
-        deleteFromCloudinary(merchant.getShopImagePublicId());
+        if (merchant.getShopImagePublicId() != null) {
+            deleteFromCloudinary(merchant.getShopImagePublicId());
+        }
 
         merchant.setShopImageUrl(null);
         merchant.setShopImagePublicId(null);
@@ -142,4 +146,87 @@ public class ShopImageServiceImpl implements ShopImageService {
             throw new RuntimeException("Failed to delete image", e);
         }
     }
+
+
+    @Override
+    public String uploadRetailerShopImageByUrl(Long userId, String imageUrl) {
+
+        validateUrl(imageUrl);
+
+        RetailerProfile retailer = retailerRepo.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Retailer profile not found"));
+
+        if (retailer.getShopImageUrl() != null) {
+            throw new RuntimeException("Shop image already exists. Use update.");
+        }
+
+        retailer.setShopImageUrl(imageUrl);
+        retailer.setShopImagePublicId(null);
+
+        return retailer.getShopImageUrl();
+    }
+
+    @Override
+    public String updateRetailerShopImageByUrl(Long userId, String imageUrl) {
+
+        validateUrl(imageUrl);
+
+        RetailerProfile retailer = retailerRepo.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Retailer profile not found"));
+
+        if (retailer.getShopImagePublicId() != null) {
+            deleteFromCloudinary(retailer.getShopImagePublicId());
+        }
+
+        retailer.setShopImageUrl(imageUrl);
+        retailer.setShopImagePublicId(null);
+
+        return retailer.getShopImageUrl();
+    }
+
+    @Override
+    public String uploadMerchantShopImageByUrl(Long userId, String imageUrl) {
+
+        validateUrl(imageUrl);
+
+        MerchantProfile merchant = merchantRepo.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Merchant profile not found"));
+
+        if (merchant.getShopImageUrl() != null) {
+            throw new RuntimeException("Shop image already exists. Use update.");
+        }
+
+        merchant.setShopImageUrl(imageUrl);
+        merchant.setShopImagePublicId(null);
+
+        return merchant.getShopImageUrl();
+    }
+
+    @Override
+    public String updateMerchantShopImageByUrl(Long userId, String imageUrl) {
+
+        validateUrl(imageUrl);
+
+        MerchantProfile merchant = merchantRepo.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Merchant profile not found"));
+
+        if (merchant.getShopImagePublicId() != null) {
+            deleteFromCloudinary(merchant.getShopImagePublicId());
+        }
+
+        merchant.setShopImageUrl(imageUrl);
+        merchant.setShopImagePublicId(null);
+
+        return merchant.getShopImageUrl();
+    }
+
+
+
+    private void validateUrl(String url) {
+        if (url == null || !url.startsWith("http")) {
+            throw new RuntimeException("Invalid image URL");
+        }
+    }
+
+
 }

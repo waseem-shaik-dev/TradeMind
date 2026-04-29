@@ -10,8 +10,8 @@ public class OrderMapper {
     public static List<OrderSummaryDto> map(List<OrderSummaryResponse> list) {
         return list.stream()
                 .map(o -> OrderSummaryDto.builder()
-                        .orderId(o.getOrderId())
-                        .customerOrRetailer(o.getName())
+                        .orderId(o.getOrderNumber())
+                        .customerOrRetailer("User "+o.getUserId())
                         .amount(o.getAmount())
                         .status(o.getStatus())
                         .time(o.getTime())

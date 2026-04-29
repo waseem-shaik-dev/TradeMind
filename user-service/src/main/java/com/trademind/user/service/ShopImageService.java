@@ -15,4 +15,10 @@ public interface ShopImageService {
     void deleteRetailerShopImage(Long userId);
 
     void deleteMerchantShopImage(Long userId);
+
+    String uploadRetailerShopImageByUrl(Long userId, String imageUrl);
+    String updateRetailerShopImageByUrl(Long userId, String imageUrl);
+
+    String uploadMerchantShopImageByUrl(Long userId, String imageUrl);
+    String updateMerchantShopImageByUrl(Long userId, String imageUrl);
 }

@@ -1,10 +1,14 @@
 package com.trademind.user.serviceImpl;
 
+import com.trademind.user.dto.AdminProfileDto;
 import com.trademind.user.dto.UserResponseDto;
+import com.trademind.user.entity.AdminProfile;
 import com.trademind.user.entity.User;
 import com.trademind.user.enums.UserRole;
 import com.trademind.user.enums.UserStatus;
+import com.trademind.user.mapper.AdminProfileMapper;
 import com.trademind.user.mapper.UserMapper;
+import com.trademind.user.repository.AdminProfileRepository;
 import com.trademind.user.repository.UserRepository;
 import com.trademind.user.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +21,9 @@ import java.util.List;
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
+    private final AdminProfileRepository repository;
     private final UserMapper userMapper;
+    private final AdminProfileMapper mapper;
 
     @Override
     public List<UserResponseDto> getAllUsers() {
@@ -42,5 +48,17 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         user.setStatus(status);
         return userMapper.toDto(userRepository.save(user));
+    }
+
+    @Override
+    public AdminProfileDto updateAdminProfile(Long userId, AdminProfileDto dto) {
+
+        AdminProfile profile = repository.findByUser_Id(userId)
+                .orElseThrow(() -> new RuntimeException("Admin profile not found"));
+
+        profile.setDepartment(dto.department());
+        profile.setDesignation(dto.designation());
+
+        return mapper.toDto(profile);
     }
 }
