@@ -61,9 +61,21 @@ public class BillingAnalyticsServiceImpl implements BillingAnalyticsService {
         LocalDateTime start = request.getStartDate().atStartOfDay();
         LocalDateTime end = request.getEndDate().atTime(23,59,59);
 
-        BigDecimal total = repository.getRevenueBetween(start, end);
+        BigDecimal total = repository.getRevenueBetween(
+                start,
+                end,
+                request.getEntityType(),
+                request.getEntityId()
+        );
 
-        List<Object[]> rawData = repository.getDailyRevenue(start, end);
+
+        List<Object[]> rawData = repository.getDailyRevenue(
+                start,
+                end,
+                request.getEntityType(),
+                request.getEntityId()
+        );
+
 
         List<RevenueDataPointDto> data = rawData.stream()
                 .map(r -> RevenueDataPointDto.builder()

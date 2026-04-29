@@ -76,9 +76,9 @@ public class BillingServiceImpl implements BillingService {
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new IllegalStateException("Invoice not found"));
 
-        if (!invoice.getSourceId().equals(sourceId)) {
-            throw new IllegalStateException("Unauthorized access");
-        }
+//        if (!invoice.getSourceId().equals(sourceId)) {
+//            throw new IllegalStateException("Unauthorized access");
+//        }
 
         return invoiceMapper.toResponseDto(invoice);
     }

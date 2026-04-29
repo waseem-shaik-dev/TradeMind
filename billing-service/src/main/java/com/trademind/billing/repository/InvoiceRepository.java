@@ -133,10 +133,25 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     FROM Invoice i
     WHERE i.paymentStatus = 'PAID'
     AND i.createdAt BETWEEN :start AND :end
+
+    AND (
+        :entityType IS NULL
+        OR (
+            :entityType = 'MERCHANT' AND i.sourceId = :entityId AND i.sourceType = com.trademind.billing.enums.SourceType.MERCHANT
+        )
+        OR (
+            :entityType = 'RETAILER' AND i.sourceId = :entityId AND i.sourceType = com.trademind.billing.enums.SourceType.RETAILER
+        )
+        OR (
+            :entityType = 'CUSTOMER' AND i.userId = :entityId
+        )
+    )
 """)
     BigDecimal getRevenueBetween(
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("entityType") String entityType,
+            @Param("entityId") Long entityId
     );
 
     @Query("""
@@ -146,12 +161,28 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     FROM Invoice i
     WHERE i.paymentStatus = 'PAID'
     AND i.createdAt BETWEEN :start AND :end
+
+    AND (
+        :entityType IS NULL
+        OR (
+            :entityType = 'MERCHANT' AND i.sourceId = :entityId AND i.sourceType = com.trademind.billing.enums.SourceType.MERCHANT
+        )
+        OR (
+            :entityType = 'RETAILER' AND i.sourceId = :entityId AND i.sourceType = com.trademind.billing.enums.SourceType.RETAILER
+        )
+        OR (
+            :entityType = 'CUSTOMER' AND i.userId = :entityId
+        )
+    )
+
     GROUP BY FUNCTION('DATE', i.createdAt)
     ORDER BY FUNCTION('DATE', i.createdAt)
 """)
     List<Object[]> getDailyRevenue(
             @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end
+            @Param("end") LocalDateTime end,
+            @Param("entityType") String entityType,
+            @Param("entityId") Long entityId
     );
 
     @Query("""
